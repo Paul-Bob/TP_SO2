@@ -21,8 +21,8 @@ int _tmain(int argc, TCHAR* argv[]) {
 	}
 
 	//Obtém variáveis que supostamente estão no Registry
-	int maxAirplanes = getMaxAirplanes();
-	int maxAirports  = getMaxAirports();
+	int maxAirplanes = getMax(TEXT("maxAirplanes"));
+	int maxAirports  = getMax(TEXT("maxAirports" ));
 	if (!maxAirplanes || !maxAirports) {
 		_tprintf(L"Registry vars fail\n");
 		return -1;

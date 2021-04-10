@@ -55,7 +55,7 @@ int preparaAmbiente(){
 	return 1;
 }
 
-int getMaxAirplanes() {
+int getMax(TCHAR* atributo) {
 	HKEY key;
 	DWORD result;
 	DWORD valor = 0;
@@ -68,29 +68,8 @@ int getMaxAirplanes() {
 		return 0;
 	}
 	else if (result == REG_OPENED_EXISTING_KEY) {
-		if (RegQueryValueEx(key, TEXT("maxAirplanes"), NULL, &type, (LPBYTE)&valor, &size) != ERROR_SUCCESS) {
-			_tprintf(L"Can't acces registry maxAirplanes...\n");
-			return 0;
-		}
-	}
-	return valor;
-}
-
-int getMaxAirports() {
-	HKEY key;
-	DWORD result;
-	DWORD valor = 0;
-	DWORD type, size = sizeof(valor);
-
-	if (!abreCriaChave(&key, &result))
-		return 0;
-
-	if (result == REG_CREATED_NEW_KEY) {
-		return 0;
-	}
-	else if (result == REG_OPENED_EXISTING_KEY) {
-		if (RegQueryValueEx(key, TEXT("maxAirports"), NULL, &type, (LPBYTE)&valor, &size) != ERROR_SUCCESS) {
-			_tprintf(L"Can't acces registry maxAirports...\n");
+		if (RegQueryValueEx(key, atributo, NULL, &type, (LPBYTE)&valor, &size) != ERROR_SUCCESS) {
+			_tprintf(L"Can't acces registry '%s'...\n", atributo);
 			return 0;
 		}
 	}
