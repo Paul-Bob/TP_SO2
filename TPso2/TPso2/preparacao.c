@@ -52,6 +52,8 @@ int preparaAmbiente(){
 		verificaAtributosValores(key);
 	}
 
+	RegCloseKey(key);
+
 	return 1;
 }
 
@@ -65,13 +67,16 @@ int getMax(TCHAR* atributo) {
 		return 0;
 
 	if (result == REG_CREATED_NEW_KEY) {
+		RegCloseKey(key);
 		return 0;
 	}
 	else if (result == REG_OPENED_EXISTING_KEY) {
 		if (RegQueryValueEx(key, atributo, NULL, &type, (LPBYTE)&valor, &size) != ERROR_SUCCESS) {
 			_tprintf(L"Can't acces registry '%s'...\n", atributo);
+			RegCloseKey(key);
 			return 0;
 		}
 	}
+	RegCloseKey(key);
 	return valor;
 }
