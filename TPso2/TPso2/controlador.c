@@ -4,6 +4,8 @@
 #include <fcntl.h>
 #include <stdio.h>
 
+#include "preparacao.h"
+
 int _tmain(int argc, TCHAR* argv[]) {
 	//previne poder ter mais do que uma instância do mesmo programa a correr em simultâneo.
 	CreateMutexA(0, FALSE, "Local\\$myprogram$"); // try to create a named mutex
@@ -12,12 +14,28 @@ int _tmain(int argc, TCHAR* argv[]) {
 		return -1;								  // quit; mutex is released automatically
 	}
 
+	//Coloca as variaveis no registry caso não estejam onde é esperado...
+	if (!preparaAmbiente()) {
+		puts("Registry fail!");
+		return -1;
+	}
+
+	//Obtém variáveis que supostamente estão no Registry
+	int maxAirplanes = getMaxAirplanes();
+	int maxAirports  = getMaxAirports();
+	if (!maxAirplanes || !maxAirports) {
+		_tprintf(L"Registry vars fail\n");
+		return -1;
+	}
+
+
 #ifdef UNICODE
 	(void)_setmode(_fileno(stdin), _O_WTEXT);
 	(void)_setmode(_fileno(stdout), _O_WTEXT);
 	(void)_setmode(_fileno(stderr), _O_WTEXT);
 #endif
-	_tprintf(L"Olá mundo!\n");
-	Sleep(5000); //testar linha 9 a 13
+
+	_tprintf(L"Olá mundo!\nMax airports do registry :  %d\nMax airplanes do registry : %d\n",maxAirports,maxAirplanes);
+	Sleep(5000); //testar linha 11 a 15
 	return 0;
 }

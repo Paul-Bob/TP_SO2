@@ -18,5 +18,13 @@
     <ClCompile Include="controlador.c">
       <Filter>Resource Files</Filter>
     </ClCompile>
+    <ClCompile Include="preparacao.c">
+      <Filter>Resource Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="preparacao.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
