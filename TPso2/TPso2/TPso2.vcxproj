@@ -139,10 +139,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="comandosControlador.c" />
     <ClCompile Include="controlador.c" />
     <ClCompile Include="preparacao.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="comandosControlador.h" />
     <ClInclude Include="preparacao.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
