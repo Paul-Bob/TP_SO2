@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 
+#include "structs.h"
 #include "preparacao.h"
 #include "comandosControlador.h"
 
@@ -13,6 +14,17 @@
 
 int _tmain(int argc, TCHAR* argv[]) {
 	TCHAR comando[SIZE];
+	pDATA data;
+
+	data = malloc(sizeof(DATA));
+	if (data == NULL) {
+		_ftprintf(stderr, L"Memorry alloc fail for data\n");
+		return -1;
+	}
+
+	data->nrAirplanes = 0;
+	data->nrAirports  = 0;
+
 
 	//previne poder ter mais do que uma instância do mesmo programa a correr em simultâneo.
 	CreateMutexA(0, FALSE, "Local\\$controlador$"); // try to create a named mutex
@@ -34,20 +46,27 @@ int _tmain(int argc, TCHAR* argv[]) {
 	}
 
 	//Obtém variáveis que supostamente estão no Registry
-	int maxAirplanes = getMax(MAX_AIRPLANES);
-	int maxAirports  = getMax(MAX_AIRPORTS);
-	if (!maxAirplanes || !maxAirports) {
+	data->maxAirplanes = getMax(MAX_AIRPLANES);
+	data->maxAirports  = getMax(MAX_AIRPORTS);
+	if (!data->maxAirplanes || !data->maxAirports) {
 		_tprintf(L"Registry vars fail\n");
 		return -1;
 	}
 
-	_tprintf(L"Max airports do registry :  %d\nMax airplanes do registry : %d\nComando 'help' para mais informações.\n\n",maxAirports,maxAirplanes);
+	//vetores aviões/aeroportos
+	data->airports = malloc(data->maxAirports * sizeof(airport));
+	if (data->airports == NULL) {
+		_ftprintf(stderr, L"Memorry alloc fail for airports\n");
+		return -1;
+	}
+
+	_tprintf(L"Max airports do registry :  %d\nMax airplanes do registry : %d\nComando 'help' para mais informações.\n\n",data->maxAirports,data->maxAirplanes);
 
 	do {
 		_tprintf(L"-> ");
 		_fgetts(comando, SIZE, stdin);
 		comando[_tcslen(comando) - 1] = '\0';
-		interpretaComandoControlador(comando);
+		interpretaComandoControlador(comando,data);
 	} 	while (_tcscmp(comando, L"exit"));
 	return 0;
 }

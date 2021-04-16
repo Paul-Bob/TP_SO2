@@ -24,12 +24,21 @@
     <ClCompile Include="comandosControlador.c">
       <Filter>Resource Files</Filter>
     </ClCompile>
+    <ClCompile Include="memDinamica.c">
+      <Filter>Resource Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="preparacao.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="comandosControlador.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="structs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="memDinamica.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
