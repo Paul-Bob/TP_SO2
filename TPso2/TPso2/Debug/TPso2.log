@@ -1,3 +1,4 @@
 ﻿  comandosControlador.c
-C:\Users\pauli\Desktop\Trabalho\TPso2\TPso2\comandosControlador.c(42,10): warning C4101: 'y': unreferenced local variable
+C:\Users\pauli\Desktop\Trabalho\TPso2\TPso2\comandosControlador.c(57,18): warning C4013: 'verifyPositions' undefined; assuming extern returning int
+C:\Users\pauli\Desktop\Trabalho\TPso2\TPso2\comandosControlador.c(104): warning C4716: 'verifyPositions': must return a value
   TPso2.vcxproj -> C:\Users\pauli\Desktop\Trabalho\TPso2\Debug\TPso2.exe
