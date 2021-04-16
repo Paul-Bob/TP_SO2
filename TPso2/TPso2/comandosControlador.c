@@ -6,6 +6,8 @@
 
 #include "comandosControlador.h"
 
+int verifyPositions(pDATA data, int x, int y, int positions);
+
 void interpretaComandoControlador(TCHAR* comando, pDATA data) {
 	_puttchar(L'\n');
 	if (!_tcscmp(comando, TEXT("exit"))) {
@@ -23,11 +25,12 @@ void interpretaComandoControlador(TCHAR* comando, pDATA data) {
 		_tprintf(TEXT("Coming soon\n"));
 	}
 	else if (!_tcscmp(comando, TEXT("criar"))) {
+
 		if (data->nrAirports >= data->maxAirports) {
 			_tprintf(TEXT("Nrº máximo de aeroportos atingido.\n"));
 			return;
 		}
-		//data->airports[data->nrAirports].name
+		
 		TCHAR name[NAMESIZE];
 		_tprintf(TEXT("Nome aeroporto: "));
 		_fgetts(name, NAMESIZE, stdin); 
@@ -35,26 +38,45 @@ void interpretaComandoControlador(TCHAR* comando, pDATA data) {
 
 		for(int i = 0; i < data->nrAirports; i++)
 			if (!_tcscmp(name, data->airports[i].name)) {
-				_tprintf(TEXT("Nome de aeroporto deve ser único.\n"));
+				_tprintf(TEXT("Nome de aeroporto deve ser único.\n\n"));
 				return;
 			}
 
 		TCHAR coordinate[100];
-		int x, y;
+		int x = -1, y = -1, temp;
 		do {
 			_tprintf(TEXT("Coordenada X entre 0 e 999 : "));
-			_fgetts(coordinate, 100, stdin);
-			x = _tcstol(coordinate, NULL, 0);
+			while (!_tscanf_s(L"%d", &x)) {
+				while ((temp = _gettchar()) != '\n' && temp != EOF);
+				_tprintf(TEXT("Insere dígito entre 0 e 999 : "));
+			}
 		} while (x < 0 || x >= 1000);
+
+		//limpa stdin
+		while ((temp = _gettchar()) != '\n' && temp != EOF);
 
 		do {
 			_tprintf(TEXT("Coordenada Y entre 0 e 999 : "));
-			_fgetts(coordinate, 100, stdin);
-			y = _tcstol(coordinate, NULL, 0);
+			while (!_tscanf_s(L"%d", &y)) {
+				while ((temp = _gettchar()) != '\n' && temp != EOF);
+				_tprintf(TEXT("Insere dígito entre 0 e 999 : "));
+			}
 		} while (y < 0 || y >= 1000);
 
-		//falta função para verificar o mapa para não ter nenhum aeroporto numa area de 10*10 posições
-		verifyPositions(data, x, y, 10);
+		while ((temp = _gettchar()) != '\n' && temp != EOF);
+
+		data->map[0][0] = 1;
+		data->map[954][199] = 1;
+		if (verifyPositions(data, x, y, 10)) {
+			airport new;
+			new.coordinates[0] = x;
+			new.coordinates[1] = y;
+			_tcscpy_s(new.name,NAMESIZE,name);
+			data->map[x][y] = 1;
+			data->airports[data->nrAirports] = new;
+			data->nrAirports++;
+			_tprintf(TEXT("Aeroporto '%s' foi adicionado com sucesso nas coordenadas [%d,%d]\n"),name,x,y);
+		}
 	}
 	else
 		_tprintf(TEXT("Comando inexistente\n"));
@@ -63,6 +85,9 @@ void interpretaComandoControlador(TCHAR* comando, pDATA data) {
 
 int verifyPositions(pDATA data, int x, int y,int positions) {
 	int lastX,lastY,firstX,firstY;
+
+	if (x < 0 || y < 0 || x >= MAPSIZE || y >= MAPSIZE || data->map[x][y] == 1)
+		return 0;
 
 	if (x < positions) {
 		lastX = positions + x;
@@ -90,15 +115,13 @@ int verifyPositions(pDATA data, int x, int y,int positions) {
 		firstY = y - positions;
 	}
 
-	_tprintf(TEXT("verificar x no intervalo [%d,%d]\nverificar y no intervalo [%d,%d]\n"),firstX,lastX,firstY,lastY);
-
-	for (int linha = firstY; linha <= lastY; linha++) {
+	for (int linha = firstY; linha <= lastY; linha++)
 		for (int coluna = firstX; coluna <= lastX; coluna++)
 			if (coluna == x && y == linha)
-				_tprintf(TEXT("(XXXXXXX) "));
-			else
-				_tprintf(TEXT("(%3d,%3d) "),coluna,linha);
-		_puttchar(L'\n');
-	}
-	_puttchar(L'K');
+				continue;
+			else if (data->map[coluna][linha] == 1) {
+				_tprintf(TEXT("Aeroporto x,y[%d,%d] está num raio de 10 posições...\n"),coluna,linha);
+				return 0;
+			}
+	return 1;
 }

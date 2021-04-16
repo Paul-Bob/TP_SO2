@@ -1,0 +1,40 @@
+int verifyPositions(pDATA data, int x, int y,int positions) {
+	int lastX,lastY,firstX,firstY;
+
+	if (x < positions) {
+		lastX = positions + x;
+		firstX = 0;
+	}
+	else if (MAPSIZE-1 - x < positions) {
+		lastX = MAPSIZE-1;
+		firstX = x - positions;
+	}
+	else {
+		lastX = x + positions;
+		firstX = x - positions;
+	}
+
+	if (y < positions) {
+		lastY = positions + y;
+		firstY = 0;
+	}
+	else if (MAPSIZE-1 - y < positions) {
+		lastY = MAPSIZE-1;
+		firstY = y - positions;
+	}
+	else {
+		lastY = y + positions;
+		firstY = y - positions;
+	}
+
+	_tprintf(TEXT("verificar x no intervalo [%d,%d]\nverificar y no intervalo [%d,%d]\n"),firstX,lastX,firstY,lastY);
+
+	for (int linha = firstY; linha <= lastY; linha++) {
+		for (int coluna = firstX; coluna <= lastX; coluna++)
+			if (coluna == x && y == linha)
+				_tprintf(TEXT("(AIRPORT) "));
+			else
+				_tprintf(TEXT("(%3d,%3d) "),coluna,linha);
+		_puttchar(L'\n');
+	}
+}
