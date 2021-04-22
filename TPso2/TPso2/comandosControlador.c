@@ -22,7 +22,13 @@ void interpretaComandoControlador(TCHAR* comando, pDATA data) {
 		//Dúvida: igual para suspender/ativar, é suposto entrar num menu ou como fizemos em SO que era sAviaoXpTO aAviaoXpTO sendo o s para suspender e a para ativar?
 	}
 	else if (!_tcscmp(comando, TEXT("listar"))) {
-		_tprintf(TEXT("Coming soon\n"));
+		if (data->nrAirports == 0) {
+			_tprintf(TEXT("Não existe nenhum aeroporto!\n\n"));
+			return;
+		}
+		_tprintf(TEXT("Aeroportos:\n"));
+		for (int i = 0; i < data->nrAirports; i++)
+				_tprintf(TEXT("%s - [%d,%d]\n"), (data->airports+i)->name, (data->airports + i)->coordinates[0], (data->airports + i)->coordinates[1]);
 	}
 	else if (!_tcscmp(comando, TEXT("criar"))) {
 
@@ -65,14 +71,12 @@ void interpretaComandoControlador(TCHAR* comando, pDATA data) {
 
 		while ((temp = _gettchar()) != '\n' && temp != EOF);
 
-		data->map[0][0] = 1;
-		data->map[954][199] = 1;
 		if (verifyPositions(data, x, y, 10)) {
 			airport new;
 			new.coordinates[0] = x;
 			new.coordinates[1] = y;
 			_tcscpy_s(new.name,NAMESIZE,name);
-			data->map[x][y] = 1;
+			data->map[x][y].airport = &data->airports[data->nrAirports];
 			data->airports[data->nrAirports] = new;
 			data->nrAirports++;
 			_tprintf(TEXT("Aeroporto '%s' foi adicionado com sucesso nas coordenadas [%d,%d]\n"),name,x,y);
@@ -86,7 +90,7 @@ void interpretaComandoControlador(TCHAR* comando, pDATA data) {
 int verifyPositions(pDATA data, int x, int y,int positions) {
 	int lastX,lastY,firstX,firstY;
 
-	if (x < 0 || y < 0 || x >= MAPSIZE || y >= MAPSIZE || data->map[x][y] == 1)
+	if (x < 0 || y < 0 || x >= MAPSIZE || y >= MAPSIZE || data->map[x][y].airport != NULL)
 		return 0;
 
 	if (x < positions) {
@@ -119,8 +123,8 @@ int verifyPositions(pDATA data, int x, int y,int positions) {
 		for (int coluna = firstX; coluna <= lastX; coluna++)
 			if (coluna == x && y == linha)
 				continue;
-			else if (data->map[coluna][linha] == 1) {
-				_tprintf(TEXT("Aeroporto x,y[%d,%d] está num raio de 10 posições...\n"),coluna,linha);
+			else if (data->map[coluna][linha].airport != NULL) {
+				_tprintf(TEXT("Aeroporto %s [%d,%d] está num raio de 10 posições...\n"), data->map[coluna][linha].airport->name,coluna,linha);
 				return 0;
 			}
 	return 1;

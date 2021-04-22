@@ -60,6 +60,14 @@ int _tmain(int argc, TCHAR* argv[]) {
 		return -1;
 	}
 
+	//map
+	for (int i = 0; i < MAPSIZE-1; i++)
+		for (int j = 0; j < MAPSIZE-1; j++)
+		{
+			data->map[i][j].airplane = NULL;
+			data->map[i][j].airport = NULL;
+		}
+
 	_tprintf(L"Max airports do registry :  %d\nMax airplanes do registry : %d\nComando 'help' para mais informações.\n\n",data->maxAirports,data->maxAirplanes);
 
 	do {
@@ -68,5 +76,9 @@ int _tmain(int argc, TCHAR* argv[]) {
 		comando[_tcslen(comando) - 1] = '\0';
 		interpretaComandoControlador(comando,data);
 	} 	while (_tcscmp(comando, L"exit"));
+
+	free(data->airports);
+	free(data);
+
 	return 0;
 }

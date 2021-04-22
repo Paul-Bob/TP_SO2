@@ -147,6 +147,7 @@
   <ItemGroup>
     <ClInclude Include="comandosControlador.h" />
     <ClInclude Include="memDinamica.h" />
+    <ClInclude Include="plane.h" />
     <ClInclude Include="preparacao.h" />
     <ClInclude Include="structs.h" />
   </ItemGroup>

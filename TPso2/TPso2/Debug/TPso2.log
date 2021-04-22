@@ -1,3 +1,6 @@
 ﻿  comandosControlador.c
-C:\Users\pauli\Desktop\Trabalho\TPso2\TPso2\comandosControlador.c(47,9): warning C4101: 'coordinate': unreferenced local variable
+C:\Users\pauli\Desktop\Trabalho\TPso2\TPso2\comandosControlador.c(51,9): warning C4101: 'coordinate': unreferenced local variable
+  controlador.c
+  memDinamica.c
+  Generating Code...
   TPso2.vcxproj -> C:\Users\pauli\Desktop\Trabalho\TPso2\Debug\TPso2.exe
