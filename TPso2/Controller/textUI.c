@@ -122,7 +122,7 @@ void interpretaComandoControlador(TCHAR* command, pDATA data) {
 			}
 
 			if (data->nrAirports >= data->maxAirports) {
-				_tprintf(TEXT("Nrº máximo de aeroportos atingido.\n"));
+				_tprintf(TEXT("Nrº máximo de aeroportos atingido.\n\n"));
 				return;
 			}
 

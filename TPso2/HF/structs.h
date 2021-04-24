@@ -37,6 +37,6 @@ struct passageiro {
 	TCHAR name[NAMESIZE];
 	pAirport origin;
 	pAirport destiny;
-	int waitingTime;
+	long int waitingTime;
 };
 #endif
