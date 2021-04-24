@@ -1,0 +1,8 @@
+﻿  controller.c
+  prepareEnv.c
+  textUI.c
+C:\Users\pauli\Desktop\Trabalho\TPso2\Controller\textUI.c(112,105): warning C4133: 'function': incompatible types - from 'TCHAR [200]' to 'const char *'
+C:\Users\pauli\Desktop\Trabalho\TPso2\Controller\textUI.c(156,3): warning C4033: 'verifyPositions' must return a value
+  Generating Code...
+C:\Users\pauli\Desktop\Trabalho\TPso2\Controller\textUI.c(194): warning C4715: 'verifyPositions': not all control paths return a value
+  Controller.vcxproj -> C:\Users\pauli\Desktop\Trabalho\TPso2\Debug\Controller.exe
