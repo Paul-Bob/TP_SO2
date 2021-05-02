@@ -31,7 +31,13 @@ struct dados {
 	int maxAirplanes , nrAirplanes;
 	pAirport airports;
 };
+// Init Alterações Liliana
+typedef struct mapa Map, * pMap; 
+struct mapa {
+	int matrix[MAPSIZE][MAPSIZE];
+};
 
+// End Alterações Liliana
 typedef struct passageiro passenger, * pPassenger;
 struct passageiro {
 	TCHAR name[NAMESIZE];

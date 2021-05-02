@@ -3,7 +3,6 @@
 
 #include <windows.h>
 
-
 typedef struct Aviao Plane, * pPlane;
 typedef struct Coordenada Coordinate, * pCoordinate;
 
@@ -13,7 +12,7 @@ struct Coordenada {
 
 struct Aviao {
 	int maxCapacity, velocity;
-	Coordinate current, final;
+	Coordinate initial, current, final;
 };
 
 
