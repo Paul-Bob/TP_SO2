@@ -43,20 +43,37 @@ void notifyController() {
 }
 
 void initTrip(pPlane plane) {
-	
+
+	HMODULE dll = LoadLibraryEx(_T("SO2_TP_DLL_2021"), NULL, 0);
+
+	if (dll == NULL) {
+		_ftprintf(stderr, L"Impossível encontrar a DLL.\n");
+		return;
+	}
+
+	FARPROC genericPointer = GetProcAddress(dll, "move");
+
+	if (genericPointer == NULL) {
+		_ftprintf(stderr, L"Impossível encontrar o método move.\n");
+		return;
+	}
+
+	int(*move)(int, int, int, int, int*, int*) = (int(*)(int, int, int, int, int*, int*))genericPointer;
+ 
 	while (1) {
-		Sleep(1000 / (DWORD)plane->velocity);
+
+		 Sleep(1000 / (DWORD)plane->velocity);
 
 		int nextX = 0, nextY = 0;
 		int result = move(plane->current.x, plane->current.y, plane->final.x, plane->final.y, &nextX, &nextY);
-
+		_tprintf(L"[DEBUG] X: %d, Y: %d Resultado: %d \n", nextX, nextY, result);
 		if (result == 2) {
 			continue;
 		}
 		else if (result == 0) {
 			_tprintf(L"[DEBUG] Cheguei ao meu destino, tenho que avisar o controlador \n"); 
 			notifyController();
-			return;
+			break;
 		}
 		else {
 			if (verifyNewPosition(nextX, nextY) == 1) {
@@ -64,15 +81,13 @@ void initTrip(pPlane plane) {
 				plane->current.y = nextY;
 				
 				notifyController();
-				
 			}
 			else {
 				continue; //TODO: Podemos melhorar esta estrategia, para já estamos só a aguardar que os gordos desocupem a loja
 			}
 		}
 	}
-
-	return;
+	FreeLibrary(dll);
 }
 
 int processCommand(TCHAR* command, pPlane plane) {
@@ -109,10 +124,14 @@ int _tmain(int argc, LPTSTR argv[]) {
 		return 1;
 	}
 
+	plane.current.x = 125;
+	plane.current.y = 277;
+	plane.final.x = 115;
+	plane.final.y = 288;
 	_tprintf(L"[DEBUG] Cap: %d - Vel: %d\n", plane.maxCapacity, plane.velocity);
 
 	registerPlaneInController(&plane);
-
+	
 	TCHAR command[SIZE];
 	do {
 		_tprintf(L"-> ");
