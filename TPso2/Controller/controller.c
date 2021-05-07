@@ -9,14 +9,13 @@
 #include "textUI.h"
 #include "sharedMemory.h"
 
-#define MAX_AIRPLANES TEXT("maxAirplanes")
-#define MAX_AIRPORTS  TEXT("maxAirports")
 #define SIZE 200
-#define KEY_PATH TEXT("SOFTWARE\\TP_SO2\\")
+
 
 int _tmain(int argc, TCHAR* argv[]) {
 	TCHAR command[SIZE];
 	pDATA data;
+	HANDLE controlPlanes;
 
 	data = malloc(sizeof(DATA));
 	if (data == NULL) {
@@ -25,7 +24,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 	}
 
 	data->nrAirplanes = 0;
-	data->nrAirports  = 0;
+
 
 
 	//previne poder ter mais do que uma instância do mesmo programa a correr em simultâneo.
@@ -55,10 +54,8 @@ int _tmain(int argc, TCHAR* argv[]) {
 		return -1;
 	}
 
-	//vetores aviões/aeroportos
-	data->airports = malloc(data->maxAirports * sizeof(airport));
-	if (data->airports == NULL) {
-		_ftprintf(stderr, L"Memorry alloc fail for airports\n");
+	if (!createAirportSpace(data)) {
+		_ftprintf(stderr, L"File mapping fail\n");
 		return -1;
 	}
 
@@ -66,6 +63,8 @@ int _tmain(int argc, TCHAR* argv[]) {
 		_ftprintf(stderr, L"File mapping fail\n");
 		return -1;
 	}
+
+	controlPlanes = CreateSemaphore(NULL, data->maxAirplanes, data->maxAirplanes, _T("planeEntryControll"));
 
 	_tprintf(L"Max airports do registry :  %d\nMax airplanes do registry : %d\nComando 'help' para mais informações.\n\n",data->maxAirports,data->maxAirplanes);
 
@@ -76,11 +75,12 @@ int _tmain(int argc, TCHAR* argv[]) {
 		interpretaComandoControlador(command,data);
 	} 	while (_tcscmp(command, L"exit"));
 
-	free(data->airports);
-	free(data);
-
 	UnmapViewOfFile(data->map);
 	CloseHandle(data->objMap);
+	UnmapViewOfFile(data->airports);
+	CloseHandle(data->objAirports);
+
+	free(data);
 
 	return 0;
 }

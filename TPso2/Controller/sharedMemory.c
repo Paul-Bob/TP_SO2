@@ -37,3 +37,27 @@ int createMap(pDATA data) {
 
 	return 1;
 }
+
+int createAirportSpace(pDATA data) {
+	data->objAirports = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, data->maxAirports * sizeof(airport), _T("airports"));
+
+	if (data->objAirports == NULL) {
+		_ftprintf(stderr, L"Impossível criar o file mapping.\n");
+		return 0;
+	}
+
+	data->airports = (pAirport)MapViewOfFile(data->objAirports, FILE_MAP_ALL_ACCESS, 0, 0, data->maxAirports * sizeof(airport));
+
+	if (data->airports == NULL) {
+		_ftprintf(stderr, L"Impossível criar a vista do file mapping.\n");
+		return 0;
+	}
+
+	for (int i = 0; i < data->maxAirports - 1; i++) {
+		_tcscpy_s(data->airports[i].name, NAMESIZE, _T("Empty"));
+	}
+
+	data->nrAirports = 0;
+
+	return 1;
+}

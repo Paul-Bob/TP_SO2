@@ -3,6 +3,7 @@
 
 #include "../HF/structs.h"
 int createMap(pDATA data);
+int createAirportSpace(pDATA data);
 
 #endif
 
