@@ -109,7 +109,7 @@ void interpretaComandoControlador(TCHAR* command, pDATA data) {
 
 				_tprintf(L"\nAdd Airport\nName: %s\nCoordinates: [%d,%d]\n\nAdd?! [Y/n]", new.name, new.coordinates[X], new.coordinates[Y]);
 
-				while ((anwser != L'y' && anwser != L'Y' && anwser != L'n' && anwser != L'N') || (strlen(extraAnwser) != 0)) {
+				while ((anwser != L'y' && anwser != L'Y' && anwser != L'n' && anwser != L'N') || (_tcslen(extraAnwser) != 0)) {
 					extraAnwser[0] = '\0';
 					_tscanf_s(L" %c", &anwser, 1);
 					_tscanf_s(L"%[^\n]", extraAnwser, 200);
@@ -133,7 +133,7 @@ void interpretaComandoControlador(TCHAR* command, pDATA data) {
 				}
 
 			if (verifyPositions(data, new.coordinates[X], new.coordinates[Y], 10)) {
-				data->map[new.coordinates[X]][new.coordinates[Y]].airport = &data->airports[data->nrAirports];
+				data->map->matrix[new.coordinates[X]][new.coordinates[Y]] = 2;
 				data->airports[data->nrAirports] = new;
 				data->nrAirports++;
 				_tprintf(TEXT("Aeroporto '%s' foi adicionado com sucesso nas coordenadas [%d,%d]\n"), new.name, new.coordinates[X], new.coordinates[Y]);
@@ -151,9 +151,9 @@ int verifyPositions(pDATA data, int x, int y,int positions) {
 	if (x < 0 || y < 0 || x >= MAPSIZE || y >= MAPSIZE)
 		return 0;
 
-	if (data->map[x][y].airport != NULL) {
-		_tprintf(TEXT("Já existe o aeroporto '%s' na posição [%d,%d]."), data->map[x][y].airport->name, x, y);
-		return;
+	if (data->map->matrix[x][y] == 2) {
+		_tprintf(TEXT("Já existe um aeroporto na posição [%d,%d]."), x, y);
+		return 0;
 	}
 
 	if (x < positions) {
@@ -186,8 +186,8 @@ int verifyPositions(pDATA data, int x, int y,int positions) {
 		for (int coluna = firstX; coluna <= lastX; coluna++)
 			if (coluna == x && y == linha)
 				continue;
-			else if (data->map[coluna][linha].airport != NULL) {
-				_tprintf(TEXT("Aeroporto %s [%d,%d] está num raio de 10 posições...\n"), data->map[coluna][linha].airport->name,coluna,linha);
+			else if (data->map->matrix[coluna][linha] == 2) {
+				_tprintf(TEXT("Aeroporto [%d,%d] está num raio de 10 posições...\n"), coluna,linha);
 				return 0;
 			}
 	return 1;

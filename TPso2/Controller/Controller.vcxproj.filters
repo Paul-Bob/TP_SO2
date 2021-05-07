@@ -24,12 +24,18 @@
     <ClCompile Include="prepareEnv.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="sharedMemory.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="textUI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="prepareEnv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sharedMemory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

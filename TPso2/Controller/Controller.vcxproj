@@ -141,10 +141,12 @@
   <ItemGroup>
     <ClCompile Include="controller.c" />
     <ClCompile Include="prepareEnv.c" />
+    <ClCompile Include="sharedMemory.c" />
     <ClCompile Include="textUI.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="prepareEnv.h" />
+    <ClInclude Include="sharedMemory.h" />
     <ClInclude Include="textUI.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

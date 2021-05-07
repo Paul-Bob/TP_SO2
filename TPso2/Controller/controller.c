@@ -7,6 +7,7 @@
 #include "../HF/structs.h"
 #include "prepareEnv.h"
 #include "textUI.h"
+#include "sharedMemory.h"
 
 #define MAX_AIRPLANES TEXT("maxAirplanes")
 #define MAX_AIRPORTS  TEXT("maxAirports")
@@ -61,48 +62,10 @@ int _tmain(int argc, TCHAR* argv[]) {
 		return -1;
 	}
 
-	//map
-	for (int i = 0; i < MAPSIZE-1; i++)
-		for (int j = 0; j < MAPSIZE-1; j++)
-		{
-			data->map[i][j].airplane = NULL;
-			data->map[i][j].airport = NULL;
-		}
-
-	// Init Alterações Liliana
-	// Decidi não apagar o que tinhas feito para não estragar nada. Basicamente estou a criar um mapa de inteiros
-	HANDLE objMap;
-	pMap map;
-	objMap = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(Map), _T("map"));
-
-	if (objMap == NULL) {
-		_ftprintf(stderr, L"Impossível criar o file mapping.\n");
-		return;
+	if (!createMap(data)) {
+		_ftprintf(stderr, L"File mapping fail\n");
+		return -1;
 	}
-
-	map = (pMap) MapViewOfFile(objMap, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(Map));
-
-	if (map == NULL) {
-		_ftprintf(stderr, L"Impossível criar a vista do file mapping.\n");
-		return;
-	}
-
-	for (int i = 0; i < MAPSIZE - 1; i++) {
-		for (int j = 0; j < MAPSIZE - 1; j++) {
-			map->matrix[i][j] = 0;
-		}
-	}
-
-	for (int i = 0; i < MAPSIZE - 1; i++) {
-		for (int j = 0; j < MAPSIZE - 1; j++) {
-			_tprintf(L"[DEBUG] X: %d, Y: %d Ocupado: %d \n", i, j, map->matrix[i][j]);
-		}
-	}
-
-	HANDLE mapMutex = CreateMutex(0, FALSE, _T("mapMutex"));
-
-	// End Alterações Liliana
-
 
 	_tprintf(L"Max airports do registry :  %d\nMax airplanes do registry : %d\nComando 'help' para mais informações.\n\n",data->maxAirports,data->maxAirplanes);
 
@@ -115,12 +78,9 @@ int _tmain(int argc, TCHAR* argv[]) {
 
 	free(data->airports);
 	free(data);
-	// Init Alterações Liliana
 
-	UnmapViewOfFile(map);
-	CloseHandle(objMap);
-
-	// END Alterações Liliana
+	UnmapViewOfFile(data->map);
+	CloseHandle(data->objMap);
 
 	return 0;
 }

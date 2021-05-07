@@ -40,7 +40,7 @@ int getArguments(int argc, LPTSTR argv[], pPassenger passenger) {
 		TCHAR* endptr;
 		passenger->waitingTime = _tcstol(argv[4], &endptr, 10);
 
-		if (strlen(endptr)) {
+		if (_tcslen(endptr)) {
 			_ftprintf(stderr, L"%s depois do inteiro não aceite...\n", endptr);
 			return 0;
 		}

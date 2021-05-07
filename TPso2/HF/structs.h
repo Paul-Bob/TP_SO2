@@ -24,20 +24,20 @@ struct ocupacao {
 	pPlane airplane;
 };
 
-typedef struct dados DATA, *pDATA;
-struct dados {
-	ocupation map[MAPSIZE][MAPSIZE];
-	int maxAirports  , nrAirports;
-	int maxAirplanes , nrAirplanes;
-	pAirport airports;
-};
-// Init Alterações Liliana
-typedef struct mapa Map, * pMap; 
+typedef struct mapa Map, * pMap;
 struct mapa {
 	int matrix[MAPSIZE][MAPSIZE];
 };
 
-// End Alterações Liliana
+typedef struct dados DATA, *pDATA;
+struct dados {
+	HANDLE objMap;
+	pMap map;
+	int maxAirports  , nrAirports;
+	int maxAirplanes , nrAirplanes;
+	pAirport airports;
+};
+
 typedef struct passageiro passenger, * pPassenger;
 struct passageiro {
 	TCHAR name[NAMESIZE];
