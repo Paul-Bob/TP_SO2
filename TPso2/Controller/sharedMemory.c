@@ -61,3 +61,27 @@ int createAirportSpace(pDATA data) {
 
 	return 1;
 }
+
+int createAirplaneSpace(pDATA data) {
+	data->objPlanes = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, data->maxAirplanes * sizeof(Plane), _T("planes"));
+
+	if (data->objPlanes == NULL) {
+		_ftprintf(stderr, L"Impossível criar o file mapping.\n");
+		return 0;
+	}
+
+	data->planes = (pPlane)MapViewOfFile(data->objPlanes, FILE_MAP_ALL_ACCESS, 0, 0, data->maxAirplanes * sizeof(Plane));
+
+	if (data->planes == NULL) {
+		_ftprintf(stderr, L"Impossível criar a vista do file mapping.\n");
+		return 0;
+	}
+
+	for (int i = 0; i < data->maxAirports - 1; i++) {
+		data->planes[i].velocity = -1; //flag
+	}
+
+	data->nrAirplanes = 0;
+
+	return 1;
+}

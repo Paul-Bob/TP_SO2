@@ -30,8 +30,10 @@ typedef struct dados DATA, *pDATA;
 struct dados {
 	HANDLE objMap;
 	HANDLE objAirports;
+	HANDLE objPlanes;
 	pMap map;
 	pAirport airports;
+	pPlane planes;
 	int maxAirports  , nrAirports;
 	int maxAirplanes , nrAirplanes;
 };

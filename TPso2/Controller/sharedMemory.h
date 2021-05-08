@@ -4,6 +4,7 @@
 #include "../HF/structs.h"
 int createMap(pDATA data);
 int createAirportSpace(pDATA data);
+int createAirplaneSpace(pDATA data);
 
 #endif
 

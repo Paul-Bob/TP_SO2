@@ -64,6 +64,11 @@ int _tmain(int argc, TCHAR* argv[]) {
 		return -1;
 	}
 
+	if (!createAirplaneSpace(data)) {
+		_ftprintf(stderr, L"File mapping fail\n");
+		return -1;
+	}
+
 	controlPlanes = CreateSemaphore(NULL, data->maxAirplanes, data->maxAirplanes, _T("planeEntryControll"));
 
 	_tprintf(L"Max airports do registry :  %d\nMax airplanes do registry : %d\nComando 'help' para mais informações.\n\n",data->maxAirports,data->maxAirplanes);
