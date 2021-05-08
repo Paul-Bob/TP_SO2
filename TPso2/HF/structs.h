@@ -31,6 +31,8 @@ struct dados {
 	HANDLE objMap;
 	HANDLE objAirports;
 	HANDLE objPlanes;
+	HANDLE airportsMutex;
+	HANDLE mapMutex;
 	pMap map;
 	pAirport airports;
 	pPlane planes;

@@ -80,6 +80,8 @@ int _tmain(int argc, TCHAR* argv[]) {
 		interpretaComandoControlador(command,data);
 	} 	while (_tcscmp(command, L"exit"));
 
+	CloseHandle(data->airportsMutex);
+	CloseHandle(data->mapMutex);
 	UnmapViewOfFile(data->map);
 	CloseHandle(data->objMap);
 	UnmapViewOfFile(data->airports);

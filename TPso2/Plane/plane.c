@@ -3,6 +3,7 @@
 #include <io.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "plane.h"
 #include "../HF/structs.h"
@@ -44,7 +45,7 @@ int getMax(TCHAR* attribute, TCHAR* path) {
 //nao sei como agora
 
 int setInitialAirport(TCHAR* name, pPlane plane) {
-	plane->current.x = -1;
+	plane->initial.x = -1;
 
 	HANDLE objAirports = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, _T("airports"));
 
@@ -55,23 +56,77 @@ int setInitialAirport(TCHAR* name, pPlane plane) {
 
 	int maxAirports = getMax(MAX_AIRPORTS, KEY_PATH);
 
-	pAirport airports = (pAirport)MapViewOfFile(objAirports, FILE_MAP_ALL_ACCESS, 0, 0, maxAirports * sizeof(airport));
+	pAirport airports = (pAirport)MapViewOfFile(objAirports, FILE_MAP_READ, 0, 0, maxAirports * sizeof(airport));
 
 	if (airports == NULL) {
+		CloseHandle(objAirports);
 		_ftprintf(stderr, L"Impossível criar o map view.\n");
 		return 0;
 	}
 	
 	for (int i = 0; i < maxAirports; i++) {
 		if (!_tcscmp(name, airports[i].name)) {
+			plane->initial.x = airports[i].coordinates[X];
+			plane->initial.y = airports[i].coordinates[Y];
 			plane->current.x = airports[i].coordinates[X];
 			plane->current.y = airports[i].coordinates[Y];
 			break;
 		}
 	}
+	UnmapViewOfFile(airports);
+	CloseHandle(objAirports);
 
-	if (plane->current.x == -1)
+	if (plane->initial.x == -1) {
 		return 0;
+	}
+
+	return 1;
+}
+
+int setDestinationAirport(TCHAR* destination, pPlane plane) {
+	plane->final.x = -1;
+
+	HANDLE objAirports = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, _T("airports"));
+
+	if (objAirports == NULL) {
+		_ftprintf(stderr, L"Impossível abrir o file mapping.\n");
+		return 0;
+	}
+
+	int maxAirports = getMax(MAX_AIRPORTS, KEY_PATH);
+
+	pAirport airports = (pAirport)MapViewOfFile(objAirports, FILE_MAP_READ, 0, 0, maxAirports * sizeof(airport));
+
+	if (airports == NULL) {
+		_ftprintf(stderr, L"Impossível criar o map view.\n");
+		CloseHandle(objAirports);
+		return 0;
+	}
+
+	HANDLE mutex = OpenMutex(SYNCHRONIZE, FALSE, _T("airportsMutex"));
+	if (mutex == NULL) {
+		_ftprintf(stderr, L"Não foi possível aceder aos aeroportos.\n");
+		UnmapViewOfFile(airports);
+		CloseHandle(objAirports);
+		return 0;
+	}
+
+	for (int i = 0; i < maxAirports; i++) {
+		if (!_tcscmp(destination, airports[i].name)) {
+			if(plane->current.x != airports[i].coordinates[X] && plane->current.y != airports[i].coordinates[Y]) {
+				plane->final.x = airports[i].coordinates[X];
+				plane->final.y = airports[i].coordinates[Y];
+				break;
+			}
+		}
+	}
+	ReleaseMutex(mutex);
+	UnmapViewOfFile(airports);
+	CloseHandle(objAirports);
+
+	if (plane->final.x == -1) {
+		return 0;
+	}
 
 	return 1;
 }
@@ -173,13 +228,12 @@ void initTrip(pPlane plane) {
 
 		int nextX = 0, nextY = 0;
 		int result = move(plane->current.x, plane->current.y, plane->final.x, plane->final.y, &nextX, &nextY);
-		_tprintf(L"[DEBUG] X: %d Y: %d R: %d  \n ", nextX, nextY, result);
+
 		if (result == 2) {
 			continue;
 		}
 		else if (result == 0) {
 			_tprintf(L"[DEBUG] Cheguei ao meu destino, tenho que avisar o controlador \n"); 
-			setPosition(map, plane->current.x, plane->current.y, 0);
 			notifyController();
 			break;
 		}
@@ -190,8 +244,10 @@ void initTrip(pPlane plane) {
 				continue;
 			}
 
-			if (map->matrix[nextX][nextY] == 0) {
-				map->matrix[plane->current.x][plane->current.y] = 0;
+			if (map->matrix[nextX][nextY] == 0 || map->matrix[nextX][nextY] == 2) {
+				if (map->matrix[nextX][nextY] != 2) {
+					map->matrix[plane->current.x][plane->current.y] = 0;
+				}
 				plane->current.x = nextX;
 				plane->current.y = nextY;
 				map->matrix[nextX][nextY] = 1;
@@ -224,6 +280,7 @@ void initTripThread(pPlane plane) {
 }
 
 int processCommand(TCHAR* command, pPlane plane) {
+
 	if (!_tcscmp(command, TEXT("exit"))) {
 		EnterCriticalSection(&plane->criticalSection);
 		plane->flagThreadTrip = 0;
@@ -232,12 +289,23 @@ int processCommand(TCHAR* command, pPlane plane) {
 		return 0;
 	}
 
-	if (!_tcscmp(command, TEXT("destino"))) {
-		_tprintf(L"[DEBUG] Vou definir o destino %s\n", command);
-	} else if (!_tcscmp(command, TEXT("iniciar"))) {
+	if (!_tcscmp(command, TEXT("iniciar"))) {
 		initTripThread(plane);
-	} 
+	}
 
+	TCHAR aux[SIZE];
+	wcscpy_s(aux, SIZE, command);
+
+	TCHAR destination[SIZE];
+	int parameters = swscanf_s(aux, L"%s %s", command, SIZE, destination, SIZE);
+	if (parameters != 2) {
+		return 1;
+	}
+
+	if (!_tcscmp(command, TEXT("destino"))) {
+		setDestinationAirport(destination, plane);
+	}
+	
 	return 1;
 }
 
@@ -302,14 +370,11 @@ int _tmain(int argc, LPTSTR argv[]) {
 
 	InitializeCriticalSection(&plane.criticalSection);
 
-	plane.current.x = 0;
-	plane.current.y = 1;
-	plane.final.x = 6;
-	plane.final.y = 7;
 	_tprintf(L"[DEBUG] Cap: %d - Vel: %d\n", plane.maxCapacity, plane.velocity);
 	
 	TCHAR command[SIZE];
 	do {
+		_tprintf(L"Estou nas coordenadas: %d, %d \n ", plane.initial.x, plane.initial.y);
 		_tprintf(L"-> ");
 		_fgetts(command, SIZE, stdin);
 		command[_tcslen(command) - 1] = '\0';

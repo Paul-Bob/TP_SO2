@@ -33,7 +33,7 @@ int createMap(pDATA data) {
 	//	}
 	//}
 
-	HANDLE mapMutex = CreateMutex(0, FALSE, _T("mapMutex"));
+	data->mapMutex = CreateMutex(0, FALSE, _T("mapMutex"));
 
 	return 1;
 }
@@ -58,6 +58,7 @@ int createAirportSpace(pDATA data) {
 	}
 
 	data->nrAirports = 0;
+	data->airportsMutex = CreateMutex(0, FALSE, _T("airportsMutex"));
 
 	return 1;
 }
