@@ -62,7 +62,7 @@ int setInitialAirport(TCHAR* name, pPlane plane) {
 		return 0;
 	}
 	
-	for (int i = 0; i < maxAirports - 1; i++) {
+	for (int i = 0; i < maxAirports; i++) {
 		if (!_tcscmp(name, airports[i].name)) {
 			plane->current.x = airports[i].coordinates[X];
 			plane->current.y = airports[i].coordinates[Y];
@@ -225,8 +225,39 @@ int processCommand(TCHAR* command, pPlane plane) {
 	return 1;
 }
 
-void registerPlaneInController(pPlane plane) {
+int registerPlaneInController(pPlane plane) {
 	//TODO: Comunicar ao controlador que existo
+	int found = 0;
+
+	HANDLE objPlanes = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, _T("planes"));
+
+	if (objPlanes == NULL) {
+		_ftprintf(stderr, L"Impossível abrir o file mapping.\n");
+		return 0;
+	}
+
+	int maxPlanes = getMax(MAX_AIRPLANES, KEY_PATH);
+
+	pPlane planes = (pPlane)MapViewOfFile(objPlanes, FILE_MAP_ALL_ACCESS, 0, 0, maxPlanes * sizeof(Plane));
+
+	if (planes == NULL) {
+		_ftprintf(stderr, L"Impossível criar o map view.\n");
+		return 0;
+	}
+
+	for (int i = 0; i < maxPlanes; i++) {
+		_ftprintf(stderr, L"%d: %d\n", i, planes[i].velocity);
+		if (planes[i].velocity == -1) {
+			planes[i] = *plane;
+			found = 1;
+			break;
+		}
+	}
+
+	if (!found)
+		return 0;
+
+	return 1;
 }
 
 int _tmain(int argc, LPTSTR argv[]) {
@@ -245,13 +276,16 @@ int _tmain(int argc, LPTSTR argv[]) {
 		return 1;
 	}
 
+	if (!registerPlaneInController(&plane)) {
+		_tprintf(TEXT("Problemas a registar o avião no controlador.\n"));
+		return 1;
+	}
+
 	plane.current.x = 0;
 	plane.current.y = 1;
 	plane.final.x = 2;
 	plane.final.y = 2;
 	_tprintf(L"[DEBUG] Cap: %d - Vel: %d\n", plane.maxCapacity, plane.velocity);
-
-	registerPlaneInController(&plane);
 	
 	TCHAR command[SIZE];
 	do {
