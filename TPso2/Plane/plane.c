@@ -133,8 +133,6 @@ int setDestinationAirport(TCHAR* destination, pPlane plane) {
 
 int getArguments(int argc, LPTSTR argv[], pPlane plane) {
 
-	//TODO: Falta o aeroporto que não faço ideia como vou saber qual o aeroporto onde estou ?????' -.-''' "#$"#$ fuck my life
-
 	if (argc != 4) {
 		_ftprintf(stderr, L"Argumentos para lançar o avião insuficientes\n");
 		return -1;
@@ -186,8 +184,8 @@ int getValueOnPosition(pMap map, int x, int y) {
 
 void initTrip(pPlane plane) {
 	EnterCriticalSection(&plane->criticalSection);
-	plane->flagThreadTrip = 1;
-	int auxFlagThreadTrip = 1; // para impedir acesso de leitura à critical section
+	plane->ongoingTrip = 1;
+	int auxOngoingTrip = 1; // para impedir acesso de leitura à critical section
 	LeaveCriticalSection(&plane->criticalSection);
 	
 	_tprintf(L"[DEBUG] Trip começou \n");
@@ -258,13 +256,13 @@ void initTrip(pPlane plane) {
 			ReleaseMutex(mutex);
 		}
 		EnterCriticalSection(&plane->criticalSection);
-		auxFlagThreadTrip = plane->flagThreadTrip;
+		auxOngoingTrip = plane->ongoingTrip;
 		LeaveCriticalSection(&plane->criticalSection);
 
-	} while (auxFlagThreadTrip);
+	} while (auxOngoingTrip);
 	_tprintf(L"[DEBUG] Trip terminou \n");
 	EnterCriticalSection(&plane->criticalSection);
-	plane->flagThreadTrip = 0;
+	plane->ongoingTrip = 0;
 	LeaveCriticalSection(&plane->criticalSection);
 	FreeLibrary(dll);
 	UnmapViewOfFile(map);
@@ -283,10 +281,19 @@ int processCommand(TCHAR* command, pPlane plane) {
 
 	if (!_tcscmp(command, TEXT("exit"))) {
 		EnterCriticalSection(&plane->criticalSection);
-		plane->flagThreadTrip = 0;
+		plane->ongoingTrip = 0;
 		LeaveCriticalSection(&plane->criticalSection);
 		WaitForSingleObject(plane->tripThread, INFINITE);
 		return 0;
+	}
+
+	EnterCriticalSection(&plane->criticalSection);
+	int auxOngoingTrip = plane->ongoingTrip;
+	LeaveCriticalSection(&plane->criticalSection);
+
+	if (auxOngoingTrip == 1) {
+		_ftprintf(stderr, L"Viagem a decorrer. Aguarde.\n");
+		return 1;
 	}
 
 	if (!_tcscmp(command, TEXT("iniciar"))) {

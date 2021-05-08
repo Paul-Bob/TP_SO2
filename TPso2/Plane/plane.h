@@ -11,7 +11,7 @@ struct Coordenada {
 };
 
 struct Aviao {
-	int maxCapacity, velocity, flagThreadTrip;
+	int maxCapacity, velocity, ongoingTrip;
 	Coordinate initial, current, final;
 	HANDLE tripThread;
 	CRITICAL_SECTION criticalSection;
