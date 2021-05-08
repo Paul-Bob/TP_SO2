@@ -53,7 +53,7 @@ int createAirportSpace(pDATA data) {
 		return 0;
 	}
 
-	for (int i = 0; i < data->maxAirports - 1; i++) {
+	for (int i = 0; i < data->maxAirports; i++) {
 		_tcscpy_s(data->airports[i].name, NAMESIZE, _T("Empty"));
 	}
 
@@ -77,9 +77,14 @@ int createAirplaneSpace(pDATA data) {
 		return 0;
 	}
 
-	for (int i = 0; i < data->maxAirports - 1; i++) {
+	for (int i = 0; i < data->maxAirplanes; i++) {
 		data->planes[i].velocity = -1; //flag
 	}
+
+	for (int i = 0; i < data->maxAirplanes; i++) {
+		_tprintf(TEXT("%d: %d\n"), i, data->planes[i].velocity);
+	}
+
 
 	data->nrAirplanes = 0;
 

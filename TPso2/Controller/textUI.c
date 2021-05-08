@@ -43,6 +43,11 @@ void interpretaComandoControlador(TCHAR* command, pDATA data) {
 		_tprintf(TEXT("Aeroportos:\n"));
 		for (int i = 0; i < data->nrAirports; i++)
 				_tprintf(TEXT("%s - [%d,%d]\n"), (data->airports+i)->name, (data->airports + i)->coordinates[0], (data->airports + i)->coordinates[1]);
+
+		_tprintf(TEXT("Aeroportos:\n"));
+		for (int i = 0; i < data->maxAirplanes; i++)
+			if(data->planes[i].velocity != -1)
+				_tprintf(TEXT("plane in [%d,%d]\n"), data->planes[i].current.x, data->planes[i].current.y);
 	}
 	else if (!_tcscmp(action, TEXT("criar"))) {
 

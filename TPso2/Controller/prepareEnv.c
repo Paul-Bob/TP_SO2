@@ -8,7 +8,7 @@
 
 #define SIZE 200
 #define MAX_AIRPORTS 20
-#define MAX_AIRPLANES 30
+#define MAX_AIRPLANES 2
 
 
 int openCreateKey(HKEY* key, DWORD* result, TCHAR* path) {
