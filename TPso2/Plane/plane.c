@@ -130,7 +130,8 @@ int getValueOnPosition(pMap map, int x, int y) {
 }
 
 void initTrip(pPlane plane) {
-
+	plane->flagThreadTrip = 1;
+	_tprintf(L"[DEBUG] Trip começou \n");
 	HMODULE dll = LoadLibraryEx(_T("SO2_TP_DLL_2021"), NULL, 0);
 
 	if (dll == NULL) {
@@ -163,7 +164,7 @@ void initTrip(pPlane plane) {
 	
 	setPosition(map, plane->current.x, plane->current.y, 1); // Ocupa a posição de sobrevoar o aeroporto.
 	
-	while (1) {
+	while (plane->flagThreadTrip) {
 
 		 Sleep(1000 / (DWORD)plane->velocity);
 
@@ -197,6 +198,8 @@ void initTrip(pPlane plane) {
 			ReleaseMutex(mutex);
 		}
 	}
+	_tprintf(L"[DEBUG] Trip terminou \n");
+	plane->flagThreadTrip = 0;
 	FreeLibrary(dll);
 	UnmapViewOfFile(map);
 	CloseHandle(objMap);
@@ -204,17 +207,16 @@ void initTrip(pPlane plane) {
 
 
 void initTripThread(pPlane plane) {
-	HANDLE tripThread;
-	int threadPlaneID;
-
-	tripThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)initTrip, (LPVOID) plane, 0, &threadPlaneID);
-	if (tripThread == NULL) {
+	plane->tripThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)initTrip, (LPVOID) plane, 0, NULL);
+	if (plane->tripThread == NULL) {
 		_ftprintf(stderr, L"Não foi possível criar a thread.\n");
 	}
 }
 
 int processCommand(TCHAR* command, pPlane plane) {
 	if (!_tcscmp(command, TEXT("exit"))) {
+		plane->flagThreadTrip = 0; //TODO: Falta um mutex nesta bodega
+		WaitForSingleObject(plane->tripThread, INFINITE);
 		return 0;
 	}
 
