@@ -157,7 +157,7 @@ void initTrip(pPlane plane) {
 	pMap map = (pMap)MapViewOfFile(objMap, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(Map));
 	 
 	if (map == NULL) {
-		_ftprintf(stderr, L"Impossível criar o map view.\n");
+		_ftprintf(stderr, _T("Impossível criar o map view.\n"));
 		return;
 	}
 	
@@ -167,16 +167,8 @@ void initTrip(pPlane plane) {
 
 		 Sleep(1000 / (DWORD)plane->velocity);
 
-		 for (int i = 0; i < MAPSIZE - 1; i++) {
-			 for (int j = 0; j < MAPSIZE - 1; j++) {
-				 _tprintf(L"[DEBUG] X: %d, Y: %d Ocupado: %d \n", i, j, map->matrix[i][j]);
-			 }
-		 }
-
 		int nextX = 0, nextY = 0;
 		int result = move(plane->current.x, plane->current.y, plane->final.x, plane->final.y, &nextX, &nextY);
-		_tprintf(L"\n\n \n");
-		_tprintf(L"[DEBUG] X: %d, Y: %d Resultado: %d \n", nextX, nextY, result);
 		if (result == 2) {
 			continue;
 		}
@@ -198,7 +190,6 @@ void initTrip(pPlane plane) {
 				plane->current.x = nextX;
 				plane->current.y = nextY;
 				map->matrix[nextX][nextY] = 1;
-				notifyController();
 			}
 			else {
 				//TODO: Podemos melhorar esta estrategia, para já estamos só a aguardar que os gordos desocupem a loja
@@ -211,6 +202,17 @@ void initTrip(pPlane plane) {
 	CloseHandle(objMap);
 }
 
+
+void initTripThread(pPlane plane) {
+	HANDLE tripThread;
+	int threadPlaneID;
+
+	tripThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)initTrip, (LPVOID) plane, 0, &threadPlaneID);
+	if (tripThread == NULL) {
+		_ftprintf(stderr, L"Não foi possível criar a thread.\n");
+	}
+}
+
 int processCommand(TCHAR* command, pPlane plane) {
 	if (!_tcscmp(command, TEXT("exit"))) {
 		return 0;
@@ -219,7 +221,7 @@ int processCommand(TCHAR* command, pPlane plane) {
 	if (!_tcscmp(command, TEXT("destino"))) {
 		_tprintf(L"[DEBUG] Vou definir o destino %s\n", command);
 	} else if (!_tcscmp(command, TEXT("iniciar"))) {
-		initTrip(plane);
+		initTripThread(plane);
 	} 
 
 	return 1;
@@ -237,8 +239,6 @@ int _tmain(int argc, LPTSTR argv[]) {
 	(void)_setmode(_fileno(stderr), _O_WTEXT);
 #endif
 
-	_tprintf(TEXT("Avião a voar #sqn\n"));
-
 	Plane plane;
 
 	if (getArguments(argc, argv, &plane) == -1) {
@@ -247,8 +247,8 @@ int _tmain(int argc, LPTSTR argv[]) {
 
 	plane.current.x = 0;
 	plane.current.y = 1;
-	plane.final.x = 2;
-	plane.final.y = 2;
+	plane.final.x = 200;
+	plane.final.y = 200;
 	_tprintf(L"[DEBUG] Cap: %d - Vel: %d\n", plane.maxCapacity, plane.velocity);
 
 	registerPlaneInController(&plane);
