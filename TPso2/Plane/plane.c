@@ -364,6 +364,17 @@ int _tmain(int argc, LPTSTR argv[]) {
 		return -1;								 
 	}
 
+	_tprintf(L"Pedido de registo à torre de controlo...");
+
+	HANDLE semaphore = OpenSemaphore(SEMAPHORE_MODIFY_STATE | SYNCHRONIZE, FALSE, _T("planeEntryControl"));
+
+	if (semaphore == NULL) {
+		_ftprintf(stderr, _T("Impossível abrir semáforo."));
+		return -1;
+	}
+
+	WaitForSingleObject(semaphore, INFINITE);
+
 	Plane plane;
 
 	if (getArguments(argc, argv, &plane) == -1) {
@@ -388,5 +399,9 @@ int _tmain(int argc, LPTSTR argv[]) {
 	} while (processCommand(command, &plane) != 0);
 
 	DeleteCriticalSection(&plane.criticalSection);
+	if (ReleaseSemaphore(semaphore, 1, NULL) == 0) {
+		_ftprintf(stderr, _T("Impossível libertar o semáforo."));
+	}
+	CloseHandle(semaphore);
 	return 0;
 }
