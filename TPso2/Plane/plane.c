@@ -104,12 +104,14 @@ int setDestinationAirport(TCHAR* destination, pPlane plane) {
 	}
 
 	HANDLE mutex = OpenMutex(SYNCHRONIZE, FALSE, _T("airportsMutex"));
+	
 	if (mutex == NULL) {
 		_ftprintf(stderr, L"Não foi possível aceder aos aeroportos.\n");
 		UnmapViewOfFile(airports);
 		CloseHandle(objAirports);
 		return 0;
 	}
+	WaitForSingleObject(mutex, INFINITE);
 
 	for (int i = 0; i < maxAirports; i++) {
 		if (!_tcscmp(destination, airports[i].name)) {
@@ -166,7 +168,7 @@ void setPosition(pMap map, int x, int y, int value) {
 		_ftprintf(stderr, L"Não foi possível atualizar o mapa.\n");
 		return;
 	}
-
+	WaitForSingleObject(mutex, INFINITE);
 	map->matrix[x][y] = value;
 	ReleaseMutex(mutex);
 }
@@ -177,6 +179,7 @@ int getValueOnPosition(pMap map, int x, int y) {
 		_ftprintf(stderr, L"Não foi possível aceder ao mapa.\n");
 		return -1;
 	}
+	WaitForSingleObject(mutex, INFINITE);
 	int value = map->matrix[x][y];
 	ReleaseMutex(mutex);
 	return value;
@@ -241,7 +244,7 @@ void initTrip(pPlane plane) {
 				_ftprintf(stderr, L"Não foi possível aceder ao mapa.\n");
 				continue;
 			}
-
+			WaitForSingleObject(mutex, INFINITE);
 			if (map->matrix[nextX][nextY] == 0 || map->matrix[nextX][nextY] == 2) {
 				if (map->matrix[nextX][nextY] != 2) {
 					map->matrix[plane->current.x][plane->current.y] = 0;
