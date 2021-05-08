@@ -130,7 +130,11 @@ int getValueOnPosition(pMap map, int x, int y) {
 }
 
 void initTrip(pPlane plane) {
+	EnterCriticalSection(&plane->criticalSection);
 	plane->flagThreadTrip = 1;
+	int auxFlagThreadTrip = 1; // para impedir acesso de leitura à critical section
+	LeaveCriticalSection(&plane->criticalSection);
+	
 	_tprintf(L"[DEBUG] Trip começou \n");
 	HMODULE dll = LoadLibraryEx(_T("SO2_TP_DLL_2021"), NULL, 0);
 
@@ -164,12 +168,12 @@ void initTrip(pPlane plane) {
 	
 	setPosition(map, plane->current.x, plane->current.y, 1); // Ocupa a posição de sobrevoar o aeroporto.
 	
-	while (plane->flagThreadTrip) {
-
+	do {
 		 Sleep(1000 / (DWORD)plane->velocity);
 
 		int nextX = 0, nextY = 0;
 		int result = move(plane->current.x, plane->current.y, plane->final.x, plane->final.y, &nextX, &nextY);
+		_tprintf(L"[DEBUG] X: %d Y: %d R: %d  \n ", nextX, nextY, result);
 		if (result == 2) {
 			continue;
 		}
@@ -197,9 +201,15 @@ void initTrip(pPlane plane) {
 			}
 			ReleaseMutex(mutex);
 		}
-	}
+		EnterCriticalSection(&plane->criticalSection);
+		auxFlagThreadTrip = plane->flagThreadTrip;
+		LeaveCriticalSection(&plane->criticalSection);
+
+	} while (auxFlagThreadTrip);
 	_tprintf(L"[DEBUG] Trip terminou \n");
+	EnterCriticalSection(&plane->criticalSection);
 	plane->flagThreadTrip = 0;
+	LeaveCriticalSection(&plane->criticalSection);
 	FreeLibrary(dll);
 	UnmapViewOfFile(map);
 	CloseHandle(objMap);
@@ -215,7 +225,9 @@ void initTripThread(pPlane plane) {
 
 int processCommand(TCHAR* command, pPlane plane) {
 	if (!_tcscmp(command, TEXT("exit"))) {
-		plane->flagThreadTrip = 0; //TODO: Falta um mutex nesta bodega
+		EnterCriticalSection(&plane->criticalSection);
+		plane->flagThreadTrip = 0;
+		LeaveCriticalSection(&plane->criticalSection);
 		WaitForSingleObject(plane->tripThread, INFINITE);
 		return 0;
 	}
@@ -271,6 +283,11 @@ int _tmain(int argc, LPTSTR argv[]) {
 	(void)_setmode(_fileno(stdout), _O_WTEXT);
 	(void)_setmode(_fileno(stderr), _O_WTEXT);
 #endif
+	CreateMutexA(0, FALSE, "Local\\$controlador$"); 
+	if (GetLastError() != ERROR_ALREADY_EXISTS) {  
+		_ftprintf(stderr, _T("O controlador não está a correr."));
+		return -1;								 
+	}
 
 	Plane plane;
 
@@ -283,10 +300,12 @@ int _tmain(int argc, LPTSTR argv[]) {
 		return 1;
 	}
 
+	InitializeCriticalSection(&plane.criticalSection);
+
 	plane.current.x = 0;
 	plane.current.y = 1;
-	plane.final.x = 200;
-	plane.final.y = 200;
+	plane.final.x = 6;
+	plane.final.y = 7;
 	_tprintf(L"[DEBUG] Cap: %d - Vel: %d\n", plane.maxCapacity, plane.velocity);
 	
 	TCHAR command[SIZE];
@@ -296,5 +315,6 @@ int _tmain(int argc, LPTSTR argv[]) {
 		command[_tcslen(command) - 1] = '\0';
 	} while (processCommand(command, &plane) != 0);
 
+	DeleteCriticalSection(&plane.criticalSection);
 	return 0;
 }
