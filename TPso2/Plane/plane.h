@@ -2,19 +2,22 @@
 #define PLANE_H
 
 #include <windows.h>
+#include "../HF/structs.h"
 
-typedef struct Aviao Plane, * pPlane;
-typedef struct Coordenada Coordinate, * pCoordinate;
+typedef struct Dados Data, * pData;
 
-struct Coordenada {
-	int x, y;
-};
 
-struct Aviao {
-	int maxCapacity, velocity, ongoingTrip;
-	Coordinate initial, current, final;
+struct Dados {
+	Plane plane;
+	int ongoingTrip;
 	HANDLE tripThread;
 	CRITICAL_SECTION criticalSection;
+	HANDLE controlSemaphore;
+	HANDLE producerMutex;
+	HANDLE emptiesSemaphore;
+	HANDLE itemsSemaphore;
+	HANDLE objProducerConsumer;
+	pProducerConsumer producerConsumer;
 };
 
 #endif

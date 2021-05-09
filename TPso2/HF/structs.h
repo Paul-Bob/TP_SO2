@@ -3,8 +3,6 @@
 
 #include <windows.h>
 
-#include "../Plane/plane.h"
-
 #define NAMESIZE 500
 #define MAPSIZE 1000
 #define X 0
@@ -12,8 +10,34 @@
 #define KEY_PATH TEXT("SOFTWARE\\TP_SO2\\")
 #define MAX_AIRPLANES TEXT("maxAirplanes")
 #define MAX_AIRPORTS  TEXT("maxAirports")
+#define DIM_BUFFER 50 
 
+typedef struct Coordenada Coordinate, * pCoordinate;
 
+struct Coordenada {
+	int x, y;
+};
+
+typedef struct Aviao Plane, * pPlane;
+
+struct Aviao {
+	int maxCapacity, velocity;
+	Coordinate initial, current, final;
+};
+
+enum messageType { Departure, Arrive, Heartbeat };
+
+typedef struct protocolo Protocol, * pProtocol;
+struct protocolo {
+	enum messageType type;
+	int planeID;
+};
+
+typedef struct produtorConsumidor ProducerConsumer, * pProducerConsumer;
+struct produtorConsumidor {
+	int in, out;
+	Protocol buffer[DIM_BUFFER];
+};
 
 typedef struct aeroporto airport, * pAirport;                    
 struct aeroporto {                                                         
@@ -31,8 +55,13 @@ struct dados {
 	HANDLE objMap;
 	HANDLE objAirports;
 	HANDLE objPlanes;
+	HANDLE objProducerConsumer;
 	HANDLE airportsMutex;
 	HANDLE mapMutex;
+	HANDLE producerConsumerThread;
+	HANDLE itemsSemaphore;
+	HANDLE emptiesSemaphore;
+	pProducerConsumer producerConsumer;
 	pMap map;
 	pAirport airports;
 	pPlane planes;

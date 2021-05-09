@@ -86,8 +86,31 @@ int createAirplaneSpace(pDATA data) {
 		_tprintf(TEXT("%d: %d\n"), i, data->planes[i].velocity);
 	}
 
-
 	data->nrAirplanes = 0;
+
+	return 1;
+}
+
+int createProducerConsumer(pDATA data) {
+	data->objProducerConsumer = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(ProducerConsumer), _T("producerConsumer"));
+
+	if (data->objProducerConsumer == NULL) {
+		_ftprintf(stderr, L"Impossível criar o file mapping do produtor/consumidor.\n");
+		return 0;
+	}
+
+	data->producerConsumer = (pProducerConsumer)MapViewOfFile(data->objProducerConsumer, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(ProducerConsumer));
+
+	if (data->producerConsumer == NULL) {
+		_ftprintf(stderr, L"Impossível criar a vista do produtor/consumidor.\n");
+		return 0;
+	}
+
+	data->producerConsumer->in = 0;
+	data->producerConsumer->out = 0;
+
+	data->itemsSemaphore = CreateSemaphore(NULL, 0, DIM_BUFFER, _T("itemsSemaphore"));
+	data->emptiesSemaphore = CreateSemaphore(NULL, DIM_BUFFER, DIM_BUFFER, _T("emptiesSemaphore"));
 
 	return 1;
 }

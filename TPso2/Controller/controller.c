@@ -11,6 +11,36 @@
 
 #define SIZE 200
 
+void printConsumedInfo(Protocol message) {
+	switch (message.type) {
+	case Arrive:
+		_tprintf(L"O avião %d chegou ao seu destino", message.planeID); 
+		break;
+	case Departure:
+		_tprintf(L"O avião %d descolou", message.planeID);
+		break;
+	}
+}
+
+void producerConsumer(pDATA data) {
+	_tprintf(L"[DEBUG] Estou na thread \n");
+	while (1) {
+		_tprintf(L"[DEBUG] Estou a espera de coisas \n");
+		WaitForSingleObject(data->itemsSemaphore, INFINITE);
+		Protocol message = data->producerConsumer->buffer[data->producerConsumer->out];
+		data->producerConsumer->out = (data->producerConsumer->out + 1) % DIM_BUFFER;
+		ReleaseSemaphore(data->emptiesSemaphore, 1, NULL);
+		printConsumedInfo(message);
+	}
+}
+
+void initProducerConsumerThread(pDATA data) {
+	_tprintf(L"[DEBUG] Vou criar a thread \n");
+	data->producerConsumerThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)producerConsumer, (LPVOID) data, 0, NULL);
+	if (data->producerConsumerThread == NULL) {
+		_ftprintf(stderr, L"Não foi possível criar a thread do produtor consumidor.\n");
+	}
+}
 
 int _tmain(int argc, TCHAR* argv[]) {
 	TCHAR command[SIZE];
@@ -24,8 +54,6 @@ int _tmain(int argc, TCHAR* argv[]) {
 	}
 
 	data->nrAirplanes = 0;
-
-
 
 	//previne poder ter mais do que uma instância do mesmo programa a correr em simultâneo.
 	CreateMutexA(0, FALSE, "Local\\$controlador$"); // try to create a named mutex
@@ -69,9 +97,16 @@ int _tmain(int argc, TCHAR* argv[]) {
 		return -1;
 	}
 
-	controlPlanes = CreateSemaphore(NULL, data->maxAirplanes, data->maxAirplanes, _T("planeEntryControl"));
+	if (!createProducerConsumer(data)) {
+		_ftprintf(stderr, L"File mapping producer/consumer fail\n");
+		return -1;
+	}
+
+	controlPlanes = CreateSemaphore(NULL, data->maxAirplanes, data->maxAirplanes, _T("planeEntryControl")); //TODO: Acho que isto não devia estar aqui
 
 	_tprintf(L"Max airports do registry :  %d\nMax airplanes do registry : %d\nComando 'help' para mais informações.\n\n",data->maxAirports,data->maxAirplanes);
+	
+	initProducerConsumerThread(data);
 
 	do {
 		_tprintf(L"-> ");
@@ -80,6 +115,10 @@ int _tmain(int argc, TCHAR* argv[]) {
 		interpretaComandoControlador(command,data);
 	} 	while (_tcscmp(command, L"exit"));
 
+	UnmapViewOfFile(data->producerConsumer);
+	CloseHandle(data->objProducerConsumer);
+	CloseHandle(data->emptiesSemaphore);
+	CloseHandle(data->itemsSemaphore);
 	CloseHandle(data->airportsMutex);
 	CloseHandle(data->mapMutex);
 	UnmapViewOfFile(data->map);

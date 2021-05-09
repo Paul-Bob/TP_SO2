@@ -44,8 +44,8 @@ int getMax(TCHAR* attribute, TCHAR* path) {
 }
 //nao sei como agora
 
-int setInitialAirport(TCHAR* name, pPlane plane) {
-	plane->initial.x = -1;
+int setInitialAirport(TCHAR* name, pData data) {
+	data->plane.initial.x = -1;
 
 	HANDLE objAirports = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, _T("airports"));
 
@@ -66,25 +66,25 @@ int setInitialAirport(TCHAR* name, pPlane plane) {
 	
 	for (int i = 0; i < maxAirports; i++) {
 		if (!_tcscmp(name, airports[i].name)) {
-			plane->initial.x = airports[i].coordinates[X];
-			plane->initial.y = airports[i].coordinates[Y];
-			plane->current.x = airports[i].coordinates[X];
-			plane->current.y = airports[i].coordinates[Y];
+			data->plane.initial.x = airports[i].coordinates[X];
+			data->plane.initial.y = airports[i].coordinates[Y];
+			data->plane.current.x = airports[i].coordinates[X];
+			data->plane.current.y = airports[i].coordinates[Y];
 			break;
 		}
 	}
 	UnmapViewOfFile(airports);
 	CloseHandle(objAirports);
 
-	if (plane->initial.x == -1) {
+	if (data->plane.initial.x == -1) {
 		return 0;
 	}
 
 	return 1;
 }
 
-int setDestinationAirport(TCHAR* destination, pPlane plane) {
-	plane->final.x = -1;
+int setDestinationAirport(TCHAR* destination, pData data) {
+	data->plane.final.x = -1;
 
 	HANDLE objAirports = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, _T("airports"));
 
@@ -115,9 +115,9 @@ int setDestinationAirport(TCHAR* destination, pPlane plane) {
 
 	for (int i = 0; i < maxAirports; i++) {
 		if (!_tcscmp(destination, airports[i].name)) {
-			if(plane->current.x != airports[i].coordinates[X] && plane->current.y != airports[i].coordinates[Y]) {
-				plane->final.x = airports[i].coordinates[X];
-				plane->final.y = airports[i].coordinates[Y];
+			if(data->plane.current.x != airports[i].coordinates[X] && data->plane.current.y != airports[i].coordinates[Y]) {
+				data->plane.final.x = airports[i].coordinates[X];
+				data->plane.final.y = airports[i].coordinates[Y];
 				break;
 			}
 		}
@@ -126,14 +126,14 @@ int setDestinationAirport(TCHAR* destination, pPlane plane) {
 	UnmapViewOfFile(airports);
 	CloseHandle(objAirports);
 
-	if (plane->final.x == -1) {
+	if (data->plane.final.x == -1) {
 		return 0;
 	}
 
 	return 1;
 }
 
-int getArguments(int argc, LPTSTR argv[], pPlane plane) {
+int getArguments(int argc, LPTSTR argv[], pData data) {
 
 	if (argc != 4) {
 		_ftprintf(stderr, L"Argumentos para lançar o avião insuficientes\n");
@@ -141,25 +141,31 @@ int getArguments(int argc, LPTSTR argv[], pPlane plane) {
 	}
 	
 
-	if (_stscanf_s(argv[1], L"%d", &plane->maxCapacity) == 0) {
+	if (_stscanf_s(argv[1], L"%d", &data->plane.maxCapacity) == 0) {
 		_ftprintf(stderr, L"Capacidade do avião inválida\n");
 		return -1;
 	}
-	if (_stscanf_s(argv[2], L"%d", &plane->velocity) == 0) {
+	if (_stscanf_s(argv[2], L"%d", &data->plane.velocity) == 0) {
 		_ftprintf(stderr, L"Velocidade do avião inválida\n");
 		return -1;
 	}
-	if (!setInitialAirport(argv[3], plane)) {
+	if (!setInitialAirport(argv[3], data)) {
 		_ftprintf(stderr, L"Aeroporto inicial inválido...\n");
 		return -1;
 	}
-
-
 	return 1;
 }
 
-void notifyController() {
-	_tprintf(L"[DEBUG] Amigo controlador, cheguei, tá? \n"); //TODO: Avisar o controlador que cheguei ou atualizar a minha posicao
+void notifyController(pData data, enum messageType type) {
+	WaitForSingleObject(data->emptiesSemaphore, INFINITE);
+	WaitForSingleObject(data->producerMutex, INFINITE);
+
+	data->producerConsumer->buffer[data->producerConsumer->in].type = type;
+	data->producerConsumer->buffer[data->producerConsumer->in].planeID = 20;
+	data->producerConsumer->in = (data->producerConsumer->in + 1) % DIM_BUFFER;
+
+	ReleaseMutex(data->producerMutex);
+	ReleaseSemaphore(data->itemsSemaphore, 1, NULL);
 }
 
 void setPosition(pMap map, int x, int y, int value) {
@@ -185,13 +191,15 @@ int getValueOnPosition(pMap map, int x, int y) {
 	return value;
 }
 
-void initTrip(pPlane plane) {
-	EnterCriticalSection(&plane->criticalSection);
-	plane->ongoingTrip = 1;
+void initTrip(pData data) {
+	EnterCriticalSection(&data->criticalSection);
+	data->ongoingTrip = 1;
 	int auxOngoingTrip = 1; // para impedir acesso de leitura à critical section
-	LeaveCriticalSection(&plane->criticalSection);
+	LeaveCriticalSection(&data->criticalSection);
 	
 	_tprintf(L"[DEBUG] Trip começou \n");
+
+	notifyController(data, Departure);
 	HMODULE dll = LoadLibraryEx(_T("SO2_TP_DLL_2021"), NULL, 0);
 
 	if (dll == NULL) {
@@ -222,20 +230,20 @@ void initTrip(pPlane plane) {
 		return;
 	}
 	
-	setPosition(map, plane->current.x, plane->current.y, 1); // Ocupa a posição de sobrevoar o aeroporto.
+	setPosition(map, data->plane.current.x, data->plane.current.y, 1); // Ocupa a posição de sobrevoar o aeroporto.
 	
 	do {
-		 Sleep(1000 / (DWORD)plane->velocity);
+		 Sleep(1000 / (DWORD)data->plane.velocity);
 
 		int nextX = 0, nextY = 0;
-		int result = move(plane->current.x, plane->current.y, plane->final.x, plane->final.y, &nextX, &nextY);
+		int result = move(data->plane.current.x, data->plane.current.y, data->plane.final.x, data->plane.final.y, &nextX, &nextY);
 
 		if (result == 2) {
 			continue;
 		}
 		else if (result == 0) {
 			_tprintf(L"[DEBUG] Cheguei ao meu destino, tenho que avisar o controlador \n"); 
-			notifyController();
+			notifyController(data, Arrive);
 			break;
 		}
 		else {
@@ -247,10 +255,10 @@ void initTrip(pPlane plane) {
 			WaitForSingleObject(mutex, INFINITE);
 			if (map->matrix[nextX][nextY] == 0 || map->matrix[nextX][nextY] == 2) {
 				if (map->matrix[nextX][nextY] != 2) {
-					map->matrix[plane->current.x][plane->current.y] = 0;
+					map->matrix[data->plane.current.x][data->plane.current.y] = 0;
 				}
-				plane->current.x = nextX;
-				plane->current.y = nextY;
+				data->plane.current.x = nextX;
+				data->plane.current.y = nextY;
 				map->matrix[nextX][nextY] = 1;
 			}
 			else {
@@ -258,41 +266,41 @@ void initTrip(pPlane plane) {
 			}
 			ReleaseMutex(mutex);
 		}
-		EnterCriticalSection(&plane->criticalSection);
-		auxOngoingTrip = plane->ongoingTrip;
-		LeaveCriticalSection(&plane->criticalSection);
+		EnterCriticalSection(&data->criticalSection);
+		auxOngoingTrip = data->ongoingTrip;
+		LeaveCriticalSection(&data->criticalSection);
 
 	} while (auxOngoingTrip);
 	_tprintf(L"[DEBUG] Trip terminou \n");
-	EnterCriticalSection(&plane->criticalSection);
-	plane->ongoingTrip = 0;
-	LeaveCriticalSection(&plane->criticalSection);
+	EnterCriticalSection(&data->criticalSection);
+	data->ongoingTrip = 0;
+	LeaveCriticalSection(&data->criticalSection);
 	FreeLibrary(dll);
 	UnmapViewOfFile(map);
 	CloseHandle(objMap);
 }
 
 
-void initTripThread(pPlane plane) {
-	plane->tripThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)initTrip, (LPVOID) plane, 0, NULL);
-	if (plane->tripThread == NULL) {
+void initTripThread(pData data) {
+	data->tripThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)initTrip, (LPVOID)data, 0, NULL);
+	if (data->tripThread == NULL) {
 		_ftprintf(stderr, L"Não foi possível criar a thread.\n");
 	}
 }
 
-int processCommand(TCHAR* command, pPlane plane) {
+int processCommand(TCHAR* command, pData data) {
 
 	if (!_tcscmp(command, TEXT("exit"))) {
-		EnterCriticalSection(&plane->criticalSection);
-		plane->ongoingTrip = 0;
-		LeaveCriticalSection(&plane->criticalSection);
-		WaitForSingleObject(plane->tripThread, INFINITE);
+		EnterCriticalSection(&data->criticalSection);
+		data->ongoingTrip = 0;
+		LeaveCriticalSection(&data->criticalSection);
+		WaitForSingleObject(data->tripThread, INFINITE);
 		return 0;
 	}
 
-	EnterCriticalSection(&plane->criticalSection);
-	int auxOngoingTrip = plane->ongoingTrip;
-	LeaveCriticalSection(&plane->criticalSection);
+	EnterCriticalSection(&data->criticalSection);
+	int auxOngoingTrip = data->ongoingTrip;
+	LeaveCriticalSection(&data->criticalSection);
 
 	if (auxOngoingTrip == 1) {
 		_ftprintf(stderr, L"Viagem a decorrer. Aguarde.\n");
@@ -300,7 +308,7 @@ int processCommand(TCHAR* command, pPlane plane) {
 	}
 
 	if (!_tcscmp(command, TEXT("iniciar"))) {
-		initTripThread(plane);
+		initTripThread(data);
 	}
 
 	TCHAR aux[SIZE];
@@ -313,13 +321,13 @@ int processCommand(TCHAR* command, pPlane plane) {
 	}
 
 	if (!_tcscmp(command, TEXT("destino"))) {
-		setDestinationAirport(destination, plane);
+		setDestinationAirport(destination, data);
 	}
 	
 	return 1;
 }
 
-int registerPlaneInController(pPlane plane) {
+int registerPlaneInController(pData data) {
 	//TODO: Comunicar ao controlador que existo
 	int found = 0;
 
@@ -342,7 +350,7 @@ int registerPlaneInController(pPlane plane) {
 	for (int i = 0; i < maxPlanes; i++) {
 		_ftprintf(stderr, L"%d: %d\n", i, planes[i].velocity);
 		if (planes[i].velocity == -1) {
-			planes[i] = *plane;
+			planes[i] = data->plane;
 			found = 1;
 			break;
 		}
@@ -352,6 +360,17 @@ int registerPlaneInController(pPlane plane) {
 		return 0;
 
 	return 1;
+}
+
+void closePlane(pData data) {
+	ReleaseSemaphore(data->controlSemaphore, 1, NULL);
+	CloseHandle(data->controlSemaphore);
+	DeleteCriticalSection(&data->criticalSection);
+	CloseHandle(data->producerMutex);
+	UnmapViewOfFile(data->producerConsumer);
+	CloseHandle(data->objProducerConsumer);
+	CloseHandle(data->emptiesSemaphore);
+	CloseHandle(data->itemsSemaphore);
 }
 
 int _tmain(int argc, LPTSTR argv[]) {
@@ -364,47 +383,83 @@ int _tmain(int argc, LPTSTR argv[]) {
 	CreateMutexA(0, FALSE, "Local\\$controlador$"); 
 	if (GetLastError() != ERROR_ALREADY_EXISTS) {  
 		_ftprintf(stderr, _T("O controlador não está a correr."));
-		return -1;								 
+		return 1;								 
 	}
 
 	_tprintf(L"Pedido de registo à torre de controlo...");
+	
+	Data data;
 
-	HANDLE semaphore = OpenSemaphore(SEMAPHORE_MODIFY_STATE | SYNCHRONIZE, FALSE, _T("planeEntryControl"));
+	data.controlSemaphore = OpenSemaphore(SEMAPHORE_MODIFY_STATE | SYNCHRONIZE, FALSE, _T("planeEntryControl"));
 
-	if (semaphore == NULL) {
+	if (data.controlSemaphore == NULL) {
 		_ftprintf(stderr, _T("Impossível abrir semáforo."));
-		return -1;
-	}
-
-	WaitForSingleObject(semaphore, INFINITE);
-
-	Plane plane;
-
-	if (getArguments(argc, argv, &plane) == -1) {
+		closePlane(&data);
 		return 1;
 	}
 
-	if (!registerPlaneInController(&plane)) {
+	WaitForSingleObject(data.controlSemaphore, INFINITE);
+
+	if (getArguments(argc, argv, &data) == -1) {
+		closePlane(&data);
+		return 1;
+	}
+
+	if (!registerPlaneInController(&data)) {
 		_tprintf(TEXT("Problemas a registar o avião no controlador.\n"));
+		closePlane(&data);
 		return 1;
 	}
 
-	InitializeCriticalSection(&plane.criticalSection);
+	InitializeCriticalSection(&data.criticalSection);
 
-	_tprintf(L"[DEBUG] Cap: %d - Vel: %d\n", plane.maxCapacity, plane.velocity);
+	data.producerMutex = CreateMutex(0, FALSE, _T("producerMutex"));
+	if (data.producerMutex == NULL) {
+		_ftprintf(stderr, L"Não foi possível abrir o mutex do produtor.\n");
+		closePlane(&data);
+		return 1;
+	} 
+
+
+	data.objProducerConsumer = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, _T("producerConsumer"));
+
+	if (data.objProducerConsumer == NULL) {
+		_ftprintf(stderr, L"Impossível abrir o file mapping do produtor/consumidor.\n");
+		closePlane(&data);
+		return 1;
+	}
+
+	data.producerConsumer = (pProducerConsumer)MapViewOfFile(data.objProducerConsumer, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(ProducerConsumer));
+
+	if (data.producerConsumer == NULL) {
+		_ftprintf(stderr, L"Impossível criar o map view do produtor/consumidor.\n");
+		closePlane(&data);
+		return 1;
+	}
+
+	data.emptiesSemaphore = OpenSemaphore(SEMAPHORE_MODIFY_STATE | SYNCHRONIZE, FALSE, _T("emptiesSemaphore"));
+
+	if (data.emptiesSemaphore == NULL) {
+		_ftprintf(stderr, _T("Impossível abrir semáforo dos items vazios."));
+		closePlane(&data);
+		return 1;
+	}
+
+	data.itemsSemaphore = OpenSemaphore(SEMAPHORE_MODIFY_STATE | SYNCHRONIZE, FALSE, _T("itemsSemaphore"));
+
+	if (data.itemsSemaphore == NULL) {
+		_ftprintf(stderr, _T("Impossível abrir semáforo dos items."));
+		closePlane(&data);
+		return 1;
+	}
 	
 	TCHAR command[SIZE];
 	do {
-		_tprintf(L"Estou nas coordenadas: %d, %d \n ", plane.initial.x, plane.initial.y);
 		_tprintf(L"-> ");
 		_fgetts(command, SIZE, stdin);
 		command[_tcslen(command) - 1] = '\0';
-	} while (processCommand(command, &plane) != 0);
-
-	DeleteCriticalSection(&plane.criticalSection);
-	if (ReleaseSemaphore(semaphore, 1, NULL) == 0) {
-		_ftprintf(stderr, _T("Impossível libertar o semáforo."));
-	}
-	CloseHandle(semaphore);
+	} while (processCommand(command, &data) != 0);
+	
+	closePlane(&data);
 	return 0;
 }
