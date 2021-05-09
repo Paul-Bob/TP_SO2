@@ -6,7 +6,6 @@
 #include <string.h>
 
 #include "plane.h"
-#include "../HF/structs.h"
 
 #define SIZE 200
 
@@ -280,11 +279,24 @@ void initTrip(pData data) {
 	CloseHandle(objMap);
 }
 
+void heartbeat(pData data) {
+	while (1) {
+		notifyController(data, Heartbeat);
+		Sleep(2500);
+	}
+}
 
 void initTripThread(pData data) {
 	data->tripThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)initTrip, (LPVOID)data, 0, NULL);
 	if (data->tripThread == NULL) {
 		_ftprintf(stderr, L"Não foi possível criar a thread.\n");
+	}
+}
+
+void initHeartbeatThread(pData data) {
+	data->heartbeatThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)heartbeat, (LPVOID)data, 0, NULL);
+	if (data->heartbeatThread == NULL) {
+		_ftprintf(stderr, L"Não foi possível criar a thread do heartbeat.\n");
 	}
 }
 
@@ -328,7 +340,6 @@ int processCommand(TCHAR* command, pData data) {
 }
 
 int registerPlaneInController(pData data) {
-	//TODO: Comunicar ao controlador que existo
 	int found = 0;
 
 	HANDLE objPlanes = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, _T("planes"));
@@ -453,6 +464,8 @@ int _tmain(int argc, LPTSTR argv[]) {
 		return 1;
 	}
 	
+	initHeartbeatThread(&data);
+
 	TCHAR command[SIZE];
 	do {
 		_tprintf(L"-> ");

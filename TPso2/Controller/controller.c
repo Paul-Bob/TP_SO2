@@ -22,6 +22,34 @@ void printConsumedInfo(Protocol message) {
 	}
 }
 
+void CALLBACK removePlane(pRemovePlane removeData, DWORD dwTimerLowValue, DWORD dwTimerHighValue) {
+	_tprintf(L"[DEBUG] Remove \n");
+	if (removeData == NULL){
+		return;
+	}
+	for (int i = 0; i < removeData->removePlaneData->maxAirplanes; i++) {
+		if (removeData->removePlaneData->planes[i].planeID == removeData->planeID) {
+			if (removeData->removePlaneData->planes[i].current.x > 0 && removeData->removePlaneData->planes[i].current.x < MAPSIZE && removeData->removePlaneData->planes[i].current.y > 0 && removeData->removePlaneData->planes[i].current.y < MAPSIZE) {
+				removeData->removePlaneData->map->matrix[removeData->removePlaneData->planes[i].current.x][removeData->removePlaneData->planes[i].current.y] = 0; // Limpa o mapa
+			}
+			removeData->removePlaneData->planes[i].velocity = -1; // Torna o espaço novamente vazio;
+			removeData->removePlaneData->planes[i].current.x = -1;
+			removeData->removePlaneData->planes[i].current.y = -1;
+			removeData->removePlaneData->planes[i].initial.x = -1;
+			removeData->removePlaneData->planes[i].initial.y = -1;
+			removeData->removePlaneData->planes[i].final.x = -1;
+			removeData->removePlaneData->planes[i].final.y = -1;
+			removeData->removePlaneData->planes[i].maxCapacity = -1;
+			removeData->removePlaneData->planes[i].planeID = -1;
+			if(removeData->removePlaneData->planes[i].heartbeatTimer != NULL) {
+				CloseHandle(removeData->removePlaneData->planes[i].heartbeatTimer);
+			}
+		}
+	}
+
+	free(removeData);
+}
+
 void producerConsumer(pDATA data) {
 	_tprintf(L"[DEBUG] Estou na thread \n");
 	while (1) {
@@ -30,7 +58,29 @@ void producerConsumer(pDATA data) {
 		Protocol message = data->producerConsumer->buffer[data->producerConsumer->out];
 		data->producerConsumer->out = (data->producerConsumer->out + 1) % DIM_BUFFER;
 		ReleaseSemaphore(data->emptiesSemaphore, 1, NULL);
-		printConsumedInfo(message);
+
+		if (message.type == Arrive || message.type == Departure) {
+			printConsumedInfo(message);
+		}
+		else {
+			_tprintf(L"[DEBUG] Heartbeat \n");
+			for (int i = 0; i < data->maxAirplanes; i++) {
+				if (data->planes[i].planeID == message.planeID) {
+					data->planes[i].heartbeatTimer = CreateWaitableTimer(NULL, TRUE, NULL);
+					pRemovePlane removePlaneData = malloc(sizeof(RemovePlane));
+					if (removePlaneData == NULL) {
+						continue;
+					}
+					removePlaneData->planeID = message.planeID;
+					removePlaneData->removePlaneData = data;
+					if(data->planes[i].heartbeatTimer != 0) {
+						LARGE_INTEGER time;
+						time.QuadPart = -30000000LL;
+						SetWaitableTimer(data->planes[i].heartbeatTimer, &time, 0, (PTIMERAPCROUTINE)removePlane, removePlaneData, FALSE);
+					}
+				}
+			}
+		}
 	}
 }
 

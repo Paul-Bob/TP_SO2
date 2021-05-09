@@ -21,8 +21,9 @@ struct Coordenada {
 typedef struct Aviao Plane, * pPlane;
 
 struct Aviao {
-	int maxCapacity, velocity;
+	int maxCapacity, velocity, planeID;
 	Coordinate initial, current, final;
+	HANDLE heartbeatTimer;
 };
 
 enum messageType { Departure, Arrive, Heartbeat };
@@ -75,5 +76,12 @@ struct passageiro {
 	pAirport origin;
 	pAirport destiny;
 	long int waitingTime;
+};
+
+typedef struct removeAviao RemovePlane, * pRemovePlane;
+
+struct removeAviao {
+	pDATA removePlaneData;
+	int planeID;
 };
 #endif

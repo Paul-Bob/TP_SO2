@@ -5,12 +5,11 @@
 #include "../HF/structs.h"
 
 typedef struct Dados Data, * pData;
-
-
 struct Dados {
 	Plane plane;
 	int ongoingTrip;
 	HANDLE tripThread;
+	HANDLE heartbeatThread;
 	CRITICAL_SECTION criticalSection;
 	HANDLE controlSemaphore;
 	HANDLE producerMutex;
