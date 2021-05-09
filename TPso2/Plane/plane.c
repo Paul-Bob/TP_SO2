@@ -160,7 +160,7 @@ void notifyController(pData data, enum messageType type) {
 	WaitForSingleObject(data->producerMutex, INFINITE);
 
 	data->producerConsumer->buffer[data->producerConsumer->in].type = type;
-	data->producerConsumer->buffer[data->producerConsumer->in].planeID = 20;
+	data->producerConsumer->buffer[data->producerConsumer->in].planeID = data->plane.planeID;
 	data->producerConsumer->in = (data->producerConsumer->in + 1) % DIM_BUFFER;
 
 	ReleaseMutex(data->producerMutex);
@@ -361,6 +361,7 @@ int registerPlaneInController(pData data) {
 	for (int i = 0; i < maxPlanes; i++) {
 		_ftprintf(stderr, L"%d: %d\n", i, planes[i].velocity);
 		if (planes[i].velocity == -1) {
+			data->plane.heartbeatTimer = NULL;
 			planes[i] = data->plane;
 			found = 1;
 			break;
@@ -415,6 +416,8 @@ int _tmain(int argc, LPTSTR argv[]) {
 		closePlane(&data);
 		return 1;
 	}
+
+	data.plane.planeID = GetCurrentProcessId();
 
 	if (!registerPlaneInController(&data)) {
 		_tprintf(TEXT("Problemas a registar o avião no controlador.\n"));

@@ -22,13 +22,16 @@ void printConsumedInfo(Protocol message) {
 	}
 }
 
-void CALLBACK removePlane(pRemovePlane removeData, DWORD dwTimerLowValue, DWORD dwTimerHighValue) {
+void removePlane(pRemovePlane removeData) {
 	_tprintf(L"[DEBUG] Remove \n");
 	if (removeData == NULL){
 		return;
 	}
 	for (int i = 0; i < removeData->removePlaneData->maxAirplanes; i++) {
 		if (removeData->removePlaneData->planes[i].planeID == removeData->planeID) {
+
+			WaitForSingleObject(removeData->removePlaneData->planes[i].heartbeatTimer, INFINITE);
+
 			if (removeData->removePlaneData->planes[i].current.x > 0 && removeData->removePlaneData->planes[i].current.x < MAPSIZE && removeData->removePlaneData->planes[i].current.y > 0 && removeData->removePlaneData->planes[i].current.y < MAPSIZE) {
 				removeData->removePlaneData->map->matrix[removeData->removePlaneData->planes[i].current.x][removeData->removePlaneData->planes[i].current.y] = 0; // Limpa o mapa
 			}
@@ -46,8 +49,16 @@ void CALLBACK removePlane(pRemovePlane removeData, DWORD dwTimerLowValue, DWORD 
 			}
 		}
 	}
-
+	_tprintf(L"[DEBUG] Removi \n");
 	free(removeData);
+}
+
+void initPlaneTimerThread(pRemovePlane removePlaneData) {
+	_tprintf(L"[DEBUG] Vou criar a thread do timer \n");
+	HANDLE thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)removePlane, (LPVOID)removePlaneData, 0, NULL);
+	if (thread == NULL) {
+		_ftprintf(stderr, L"Não foi possível criar a thread do timer.\n");
+	}
 }
 
 void producerConsumer(pDATA data) {
@@ -63,20 +74,26 @@ void producerConsumer(pDATA data) {
 			printConsumedInfo(message);
 		}
 		else {
-			_tprintf(L"[DEBUG] Heartbeat \n");
+			_tprintf(L"[DEBUG] Heartbeat %d \n, ", message.planeID);
 			for (int i = 0; i < data->maxAirplanes; i++) {
 				if (data->planes[i].planeID == message.planeID) {
-					data->planes[i].heartbeatTimer = CreateWaitableTimer(NULL, TRUE, NULL);
-					pRemovePlane removePlaneData = malloc(sizeof(RemovePlane));
-					if (removePlaneData == NULL) {
-						continue;
+					if(data->planes[i].heartbeatTimer == NULL) {
+						_tprintf(L"[DEBUG] Entrei no if \n");
+						data->planes[i].heartbeatTimer = CreateWaitableTimer(NULL, TRUE, NULL);
+						pRemovePlane removePlaneData = malloc(sizeof(RemovePlane));
+						if (removePlaneData == NULL) {
+							continue;
+						}
+						removePlaneData->planeID = message.planeID;
+						removePlaneData->removePlaneData = data;
+						initPlaneTimerThread(removePlaneData);
 					}
-					removePlaneData->planeID = message.planeID;
-					removePlaneData->removePlaneData = data;
+
 					if(data->planes[i].heartbeatTimer != 0) {
+						_tprintf(L"[DEBUG] TIMER RESET \n");
 						LARGE_INTEGER time;
 						time.QuadPart = -30000000LL;
-						SetWaitableTimer(data->planes[i].heartbeatTimer, &time, 0, (PTIMERAPCROUTINE)removePlane, removePlaneData, FALSE);
+						SetWaitableTimer(data->planes[i].heartbeatTimer, &time, 0, NULL, NULL, FALSE);
 					}
 				}
 			}
