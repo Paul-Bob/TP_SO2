@@ -113,7 +113,7 @@ int setDestinationAirport(TCHAR* destination, pData data) {
 	WaitForSingleObject(mutex, INFINITE);
 
 	for (int i = 0; i < maxAirports; i++) {
-		if (!_tcscmp(destination, airports[i].name)) {
+		if (!_tcscmp(destination, airports[i].name)) { //TODO: mensagem de erro
 			if(data->plane.current.x != airports[i].coordinates[X] && data->plane.current.y != airports[i].coordinates[Y]) {
 				data->plane.final.x = airports[i].coordinates[X];
 				data->plane.final.y = airports[i].coordinates[Y];
@@ -241,7 +241,7 @@ void initTrip(pData data) {
 			continue;
 		}
 		else if (result == 0) {
-			_tprintf(L"[DEBUG] Cheguei ao meu destino, tenho que avisar o controlador \n"); 
+			_tprintf(L"[DEBUG] Cheguei ao meu destino, tenho que avisar o controlador \n"); //TODO: Limpar o final
 			notifyController(data, Arrive);
 			break;
 		}
@@ -282,7 +282,7 @@ void initTrip(pData data) {
 void heartbeat(pData data) {
 	while (1) {
 		notifyController(data, Heartbeat);
-		Sleep(2500);
+		Sleep(2500); // TODO: verificar se este é o melhor
 	}
 }
 

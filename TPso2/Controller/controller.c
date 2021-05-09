@@ -29,7 +29,9 @@ void removePlane(pRemovePlane removeData) {
 	}
 	for (int i = 0; i < removeData->removePlaneData->maxAirplanes; i++) {
 		if (removeData->removePlaneData->planes[i].planeID == removeData->planeID) {
-
+			if (removeData->removePlaneData->planes[i].heartbeatTimer == NULL) {
+				return;
+			}
 			WaitForSingleObject(removeData->removePlaneData->planes[i].heartbeatTimer, INFINITE);
 
 			if (removeData->removePlaneData->planes[i].current.x > 0 && removeData->removePlaneData->planes[i].current.x < MAPSIZE && removeData->removePlaneData->planes[i].current.y > 0 && removeData->removePlaneData->planes[i].current.y < MAPSIZE) {
@@ -78,7 +80,6 @@ void producerConsumer(pDATA data) {
 			for (int i = 0; i < data->maxAirplanes; i++) {
 				if (data->planes[i].planeID == message.planeID) {
 					if(data->planes[i].heartbeatTimer == NULL) {
-						_tprintf(L"[DEBUG] Entrei no if \n");
 						data->planes[i].heartbeatTimer = CreateWaitableTimer(NULL, TRUE, NULL);
 						pRemovePlane removePlaneData = malloc(sizeof(RemovePlane));
 						if (removePlaneData == NULL) {
@@ -90,7 +91,6 @@ void producerConsumer(pDATA data) {
 					}
 
 					if(data->planes[i].heartbeatTimer != 0) {
-						_tprintf(L"[DEBUG] TIMER RESET \n");
 						LARGE_INTEGER time;
 						time.QuadPart = -30000000LL;
 						SetWaitableTimer(data->planes[i].heartbeatTimer, &time, 0, NULL, NULL, FALSE);
