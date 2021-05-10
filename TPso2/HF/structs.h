@@ -21,17 +21,20 @@ struct Coordenada {
 typedef struct Aviao Plane, * pPlane;
 
 struct Aviao {
-	int maxCapacity, velocity, planeID;
+	int maxCapacity, velocity, planeID, index;
+	TCHAR actualAirport[NAMESIZE];
+	TCHAR destinAirport[NAMESIZE];
 	Coordinate initial, current, final;
 	HANDLE heartbeatTimer;
 };
 
-enum messageType { Departure, Arrive, Heartbeat };
+enum messageType { Register, Departure, Arrive, Heartbeat };
 
 typedef struct protocolo Protocol, * pProtocol;
 struct protocolo {
 	enum messageType type;
 	int planeID;
+	int index;
 };
 
 typedef struct produtorConsumidor ProducerConsumer, * pProducerConsumer;
@@ -62,6 +65,7 @@ struct dados {
 	HANDLE producerConsumerThread;
 	HANDLE itemsSemaphore;
 	HANDLE emptiesSemaphore;
+	HANDLE controlPlanes;
 	pProducerConsumer producerConsumer;
 	pMap map;
 	pAirport airports;
@@ -78,10 +82,13 @@ struct passageiro {
 	long int waitingTime;
 };
 
+
 typedef struct removeAviao RemovePlane, * pRemovePlane;
 
 struct removeAviao {
-	pDATA removePlaneData;
-	int planeID;
+	pMap map;
+	pPlane plane;
+	HANDLE controll;
 };
+
 #endif

@@ -9,6 +9,19 @@
 
 #define SIZE 200
 
+void notifyController(pData data, enum messageType type) {
+	WaitForSingleObject(data->emptiesSemaphore, INFINITE);
+	WaitForSingleObject(data->producerMutex, INFINITE);
+
+	data->producerConsumer->buffer[data->producerConsumer->in].type = type;
+	data->producerConsumer->buffer[data->producerConsumer->in].planeID = data->plane.planeID;
+	data->producerConsumer->buffer[data->producerConsumer->in].index = data->plane.index;
+	data->producerConsumer->in = (data->producerConsumer->in + 1) % DIM_BUFFER;
+
+	ReleaseMutex(data->producerMutex);
+	ReleaseSemaphore(data->itemsSemaphore, 1, NULL);
+}
+
 //depois alterar
 int openCreateKey(HKEY* key, DWORD* result, TCHAR* path) {
 	if (RegCreateKeyEx(HKEY_CURRENT_USER, path, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, key, result) != ERROR_SUCCESS) {
@@ -69,6 +82,8 @@ int setInitialAirport(TCHAR* name, pData data) {
 			data->plane.initial.y = airports[i].coordinates[Y];
 			data->plane.current.x = airports[i].coordinates[X];
 			data->plane.current.y = airports[i].coordinates[Y];
+			_tcscpy_s(data->plane.actualAirport, NAMESIZE, name);
+			_tcscpy_s(data->plane.destinAirport, NAMESIZE, _T("NULL"));
 			break;
 		}
 	}
@@ -117,6 +132,7 @@ int setDestinationAirport(TCHAR* destination, pData data) {
 			if(data->plane.current.x != airports[i].coordinates[X] && data->plane.current.y != airports[i].coordinates[Y]) {
 				data->plane.final.x = airports[i].coordinates[X];
 				data->plane.final.y = airports[i].coordinates[Y];
+				_tcscpy_s(data->plane.destinAirport, NAMESIZE, destination);
 				break;
 			}
 		}
@@ -155,17 +171,6 @@ int getArguments(int argc, LPTSTR argv[], pData data) {
 	return 1;
 }
 
-void notifyController(pData data, enum messageType type) {
-	WaitForSingleObject(data->emptiesSemaphore, INFINITE);
-	WaitForSingleObject(data->producerMutex, INFINITE);
-
-	data->producerConsumer->buffer[data->producerConsumer->in].type = type;
-	data->producerConsumer->buffer[data->producerConsumer->in].planeID = data->plane.planeID;
-	data->producerConsumer->in = (data->producerConsumer->in + 1) % DIM_BUFFER;
-
-	ReleaseMutex(data->producerMutex);
-	ReleaseSemaphore(data->itemsSemaphore, 1, NULL);
-}
 
 void setPosition(pMap map, int x, int y, int value) {
 	HANDLE mutex = OpenMutex(SYNCHRONIZE, FALSE, _T("mapMutex"));
@@ -229,7 +234,9 @@ void initTrip(pData data) {
 		return;
 	}
 	
-	setPosition(map, data->plane.current.x, data->plane.current.y, 1); // Ocupa a posição de sobrevoar o aeroporto.
+	setPosition(map, data->plane.current.x, data->plane.current.y, 1); // Ocupa a posição de sobrevoar o aeroporto. Isto nao tira a indicação de aeroporto no mapa?!
+
+	_tcscpy_s(data->plane.actualAirport, NAMESIZE, _T("Fly"));
 	
 	do {
 		 Sleep(1000 / (DWORD)data->plane.velocity);
@@ -242,6 +249,8 @@ void initTrip(pData data) {
 		}
 		else if (result == 0) {
 			_tprintf(L"[DEBUG] Cheguei ao meu destino, tenho que avisar o controlador \n"); //TODO: Limpar o final
+			_tcscpy_s(data->plane.actualAirport, NAMESIZE, data->plane.destinAirport);
+			_tcscpy_s(data->plane.destinAirport, NAMESIZE, _T("NULL"));
 			notifyController(data, Arrive);
 			break;
 		}
@@ -294,6 +303,8 @@ void initTripThread(pData data) {
 }
 
 void initHeartbeatThread(pData data) {
+	notifyController(data, Register);
+	_tprintf(L"Conexão com a torre de controlo efetuada com sucesso...\n\n");
 	data->heartbeatThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)heartbeat, (LPVOID)data, 0, NULL);
 	if (data->heartbeatThread == NULL) {
 		_ftprintf(stderr, L"Não foi possível criar a thread do heartbeat.\n");
@@ -359,11 +370,11 @@ int registerPlaneInController(pData data) {
 	}
 
 	for (int i = 0; i < maxPlanes; i++) {
-		_ftprintf(stderr, L"%d: %d\n", i, planes[i].velocity);
 		if (planes[i].velocity == -1) {
 			data->plane.heartbeatTimer = NULL;
 			planes[i] = data->plane;
 			found = 1;
+			data->plane.index = i;
 			break;
 		}
 	}
@@ -398,7 +409,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 		return 1;								 
 	}
 
-	_tprintf(L"Pedido de registo à torre de controlo...");
+	_tprintf(L"Pedido de registo à torre de controlo...\n");
 	
 	Data data;
 
@@ -466,8 +477,9 @@ int _tmain(int argc, LPTSTR argv[]) {
 		closePlane(&data);
 		return 1;
 	}
-	
+
 	initHeartbeatThread(&data);
+
 
 	TCHAR command[SIZE];
 	do {

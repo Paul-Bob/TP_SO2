@@ -23,40 +23,42 @@ void printConsumedInfo(Protocol message) {
 }
 
 void removePlane(pRemovePlane removeData) {
-	_tprintf(L"[DEBUG] Remove \n");
-	if (removeData == NULL){
+	//_tprintf(L"[DEBUG] Remove V2\n");
+	if (removeData == NULL) {
 		return;
 	}
-	for (int i = 0; i < removeData->removePlaneData->maxAirplanes; i++) {
-		if (removeData->removePlaneData->planes[i].planeID == removeData->planeID) {
-			if (removeData->removePlaneData->planes[i].heartbeatTimer == NULL) {
-				return;
-			}
-			WaitForSingleObject(removeData->removePlaneData->planes[i].heartbeatTimer, INFINITE);
 
-			if (removeData->removePlaneData->planes[i].current.x > 0 && removeData->removePlaneData->planes[i].current.x < MAPSIZE && removeData->removePlaneData->planes[i].current.y > 0 && removeData->removePlaneData->planes[i].current.y < MAPSIZE) {
-				removeData->removePlaneData->map->matrix[removeData->removePlaneData->planes[i].current.x][removeData->removePlaneData->planes[i].current.y] = 0; // Limpa o mapa
-			}
-			removeData->removePlaneData->planes[i].velocity = -1; // Torna o espaço novamente vazio;
-			removeData->removePlaneData->planes[i].current.x = -1;
-			removeData->removePlaneData->planes[i].current.y = -1;
-			removeData->removePlaneData->planes[i].initial.x = -1;
-			removeData->removePlaneData->planes[i].initial.y = -1;
-			removeData->removePlaneData->planes[i].final.x = -1;
-			removeData->removePlaneData->planes[i].final.y = -1;
-			removeData->removePlaneData->planes[i].maxCapacity = -1;
-			removeData->removePlaneData->planes[i].planeID = -1;
-			if(removeData->removePlaneData->planes[i].heartbeatTimer != NULL) {
-				CloseHandle(removeData->removePlaneData->planes[i].heartbeatTimer);
-			}
-		}
+	WaitForSingleObject(removeData->plane->heartbeatTimer, INFINITE);
+
+	int x = removeData->plane->current.x;
+	int y = removeData->plane->current.y;
+
+	if (x > 0 && x < MAPSIZE && y > 0 && y < MAPSIZE) {
+		removeData->map->matrix[x][y] = 0; // Limpa o mapa
 	}
-	_tprintf(L"[DEBUG] Removi \n");
+	removeData->plane->velocity = -1; // Torna o espaço novamente vazio;
+	removeData->plane->current.x = -1;
+	removeData->plane->current.y = -1;
+	removeData->plane->initial.x = -1;
+	removeData->plane->initial.y = -1;
+	removeData->plane->final.x = -1;
+	removeData->plane->final.y = -1;
+	removeData->plane->maxCapacity = -1;
+	if (removeData->plane->heartbeatTimer != NULL) {
+		CloseHandle(removeData->plane->heartbeatTimer);
+	}
+
+	//_tprintf(L"[DEBUG] Removi V2\n");
+	_tprintf(L"ALERTA!!\n");
+	_tprintf(L"Conexão PERDIDA!\n");
+	_tprintf(_T("Avião ID   : %d\n\n"), removeData->plane->planeID);
+	removeData->plane->planeID = -1;
+	ReleaseSemaphore(removeData->controll, 1, NULL);
 	free(removeData);
 }
 
 void initPlaneTimerThread(pRemovePlane removePlaneData) {
-	_tprintf(L"[DEBUG] Vou criar a thread do timer \n");
+	//_tprintf(L"[DEBUG] Vou criar a thread do timer \n");
 	HANDLE thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)removePlane, (LPVOID)removePlaneData, 0, NULL);
 	if (thread == NULL) {
 		_ftprintf(stderr, L"Não foi possível criar a thread do timer.\n");
@@ -64,45 +66,51 @@ void initPlaneTimerThread(pRemovePlane removePlaneData) {
 }
 
 void producerConsumer(pDATA data) {
-	_tprintf(L"[DEBUG] Estou na thread \n");
+	//_tprintf(L"[DEBUG] Estou na thread \n");
+	int planePos;
 	while (1) {
-		_tprintf(L"[DEBUG] Estou a espera de coisas \n");
+		//_tprintf(L"[DEBUG] Estou a espera de coisas \n");
 		WaitForSingleObject(data->itemsSemaphore, INFINITE);
 		Protocol message = data->producerConsumer->buffer[data->producerConsumer->out];
 		data->producerConsumer->out = (data->producerConsumer->out + 1) % DIM_BUFFER;
 		ReleaseSemaphore(data->emptiesSemaphore, 1, NULL);
 
+		planePos = message.index;
+
 		if (message.type == Arrive || message.type == Departure) {
 			printConsumedInfo(message);
 		}
+		else if (message.type == Register) {
+			_tprintf(_T("\n\nNovo registo de avião!\n"));
+			_tprintf(_T("Avião ID   : %d\n"),message.planeID);
+			_tprintf(_T("Aeroporto  : %s\n"),data->planes[planePos].actualAirport);
+			_tprintf(_T("Velocidade : %d\n"),data->planes[planePos].velocity);
+			_tprintf(_T("Capacidade : %d\n\n"),data->planes[planePos].maxCapacity);
+		}
 		else {
-			_tprintf(L"[DEBUG] Heartbeat %d \n, ", message.planeID);
-			for (int i = 0; i < data->maxAirplanes; i++) {
-				if (data->planes[i].planeID == message.planeID) {
-					if(data->planes[i].heartbeatTimer == NULL) {
-						data->planes[i].heartbeatTimer = CreateWaitableTimer(NULL, TRUE, NULL);
-						pRemovePlane removePlaneData = malloc(sizeof(RemovePlane));
-						if (removePlaneData == NULL) {
-							continue;
-						}
-						removePlaneData->planeID = message.planeID;
-						removePlaneData->removePlaneData = data;
-						initPlaneTimerThread(removePlaneData);
-					}
+			//_tprintf(L"[DEBUG] Heartbeat %d \n, ", message.planeID);
+			if(data->planes[planePos].heartbeatTimer == NULL) {
+				data->planes[planePos].heartbeatTimer = CreateWaitableTimer(NULL, TRUE, NULL);
+				pRemovePlane removePlaneData = malloc(sizeof(RemovePlane));
+				if (removePlaneData == NULL) 
+					continue;
+				removePlaneData->map = data->map;
+				removePlaneData->plane = &data->planes[planePos];
+				removePlaneData->controll = data->controlPlanes;
+				initPlaneTimerThread(removePlaneData);
+			}
 
-					if(data->planes[i].heartbeatTimer != 0) {
-						LARGE_INTEGER time;
-						time.QuadPart = -30000000LL;
-						SetWaitableTimer(data->planes[i].heartbeatTimer, &time, 0, NULL, NULL, FALSE);
-					}
-				}
+			if(data->planes[planePos].heartbeatTimer != 0) {
+				LARGE_INTEGER time;
+				time.QuadPart = -30000000LL;
+				SetWaitableTimer(data->planes[planePos].heartbeatTimer, &time, 0, NULL, NULL, FALSE);
 			}
 		}
 	}
 }
 
 void initProducerConsumerThread(pDATA data) {
-	_tprintf(L"[DEBUG] Vou criar a thread \n");
+	//_tprintf(L"[DEBUG] Vou criar a thread \n");
 	data->producerConsumerThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)producerConsumer, (LPVOID) data, 0, NULL);
 	if (data->producerConsumerThread == NULL) {
 		_ftprintf(stderr, L"Não foi possível criar a thread do produtor consumidor.\n");
@@ -112,7 +120,6 @@ void initProducerConsumerThread(pDATA data) {
 int _tmain(int argc, TCHAR* argv[]) {
 	TCHAR command[SIZE];
 	pDATA data;
-	HANDLE controlPlanes;
 
 	data = malloc(sizeof(DATA));
 	if (data == NULL) {
@@ -169,7 +176,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 		return -1;
 	}
 
-	controlPlanes = CreateSemaphore(NULL, data->maxAirplanes, data->maxAirplanes, _T("planeEntryControl")); //TODO: Acho que isto não devia estar aqui
+	data->controlPlanes = CreateSemaphore(NULL, data->maxAirplanes, data->maxAirplanes, _T("planeEntryControl")); //TODO: Acho que isto não devia estar aqui
 
 	_tprintf(L"Max airports do registry :  %d\nMax airplanes do registry : %d\nComando 'help' para mais informações.\n\n",data->maxAirports,data->maxAirplanes);
 	

@@ -80,11 +80,9 @@ int createAirplaneSpace(pDATA data) {
 
 	for (int i = 0; i < data->maxAirplanes; i++) {
 		data->planes[i].velocity = -1; //flag
+		data->planes[i].heartbeatTimer = NULL;
 	}
 
-	for (int i = 0; i < data->maxAirplanes; i++) {
-		_tprintf(TEXT("%d: %d\n"), i, data->planes[i].velocity);
-	}
 
 	data->nrAirplanes = 0;
 
