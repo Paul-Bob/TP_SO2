@@ -11,19 +11,27 @@
 
 #define SIZE 200
 
-void printConsumedInfo(Protocol message) {
+void printConsumedInfo(Protocol message, pPlane plane) {
 	switch (message.type) {
 	case Arrive:
-		_tprintf(L"O avião %d chegou ao seu destino", message.planeID); 
+		_tprintf(L"O avião %d aterrou com sucesso no aeroporto '%s'", message.planeID, plane->actualAirport); 
 		break;
 	case Departure:
-		_tprintf(L"O avião %d descolou", message.planeID);
+		_tprintf(L"O avião %d descolou com sucesso do aeroporto '%s' e tem como destino o aeroporto '%s'",
+			message.planeID, plane->departureAirport, plane->destinAirport);
+		break;
+	case Register:
+		_tprintf(_T("\n\nNovo registo de avião!\n"));
+		_tprintf(_T("Avião ID   : %d\n"), message.planeID);
+		_tprintf(_T("Aeroporto  : %s\n"), plane->actualAirport);
+		_tprintf(_T("Velocidade : %d\n"), plane->velocity);
+		_tprintf(_T("Capacidade : %d\n\n"), plane->maxCapacity);
 		break;
 	}
 }
 
 void removePlane(pRemovePlane removeData) {
-	//_tprintf(L"[DEBUG] Remove V2\n");
+	_tprintf(L"[DEBUG] Remove\n");
 	if (removeData == NULL) {
 		return;
 	}
@@ -48,7 +56,7 @@ void removePlane(pRemovePlane removeData) {
 		CloseHandle(removeData->plane->heartbeatTimer);
 	}
 
-	//_tprintf(L"[DEBUG] Removi V2\n");
+	_tprintf(L"[DEBUG] Removi\n");
 	_tprintf(L"ALERTA!!\n");
 	_tprintf(L"Conexão PERDIDA!\n");
 	_tprintf(_T("Avião ID   : %d\n\n"), removeData->plane->planeID);
@@ -58,7 +66,7 @@ void removePlane(pRemovePlane removeData) {
 }
 
 void initPlaneTimerThread(pRemovePlane removePlaneData) {
-	//_tprintf(L"[DEBUG] Vou criar a thread do timer \n");
+	_tprintf(L"[DEBUG] Vou criar a thread do timer \n");
 	HANDLE thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)removePlane, (LPVOID)removePlaneData, 0, NULL);
 	if (thread == NULL) {
 		_ftprintf(stderr, L"Não foi possível criar a thread do timer.\n");
@@ -66,10 +74,10 @@ void initPlaneTimerThread(pRemovePlane removePlaneData) {
 }
 
 void producerConsumer(pDATA data) {
-	//_tprintf(L"[DEBUG] Estou na thread \n");
+	_tprintf(L"[DEBUG] Estou na thread \n");
 	int planePos;
 	while (1) {
-		//_tprintf(L"[DEBUG] Estou a espera de coisas \n");
+		_tprintf(L"[DEBUG] Estou a espera de coisas \n");
 		WaitForSingleObject(data->itemsSemaphore, INFINITE);
 		Protocol message = data->producerConsumer->buffer[data->producerConsumer->out];
 		data->producerConsumer->out = (data->producerConsumer->out + 1) % DIM_BUFFER;
@@ -77,18 +85,11 @@ void producerConsumer(pDATA data) {
 
 		planePos = message.index;
 
-		if (message.type == Arrive || message.type == Departure) {
-			printConsumedInfo(message);
-		}
-		else if (message.type == Register) {
-			_tprintf(_T("\n\nNovo registo de avião!\n"));
-			_tprintf(_T("Avião ID   : %d\n"),message.planeID);
-			_tprintf(_T("Aeroporto  : %s\n"),data->planes[planePos].actualAirport);
-			_tprintf(_T("Velocidade : %d\n"),data->planes[planePos].velocity);
-			_tprintf(_T("Capacidade : %d\n\n"),data->planes[planePos].maxCapacity);
+		if (message.type == Arrive || message.type == Departure || message.type == Register) {
+			printConsumedInfo(message,&data->planes[planePos]);
 		}
 		else {
-			//_tprintf(L"[DEBUG] Heartbeat %d \n, ", message.planeID);
+			_tprintf(L"[DEBUG] Heartbeat %d \n, ", message.planeID);
 			if(data->planes[planePos].heartbeatTimer == NULL) {
 				data->planes[planePos].heartbeatTimer = CreateWaitableTimer(NULL, TRUE, NULL);
 				pRemovePlane removePlaneData = malloc(sizeof(RemovePlane));
@@ -156,27 +157,11 @@ int _tmain(int argc, TCHAR* argv[]) {
 		return -1;
 	}
 
-	if (!createAirportSpace(data)) {
+	//estas funções internamente fornecem mais informações caso algo falhe
+	if (!createAirportSpace(data) || !createMap(data) || !createAirplaneSpace(data) || !createProducerConsumer(data)) {
 		_ftprintf(stderr, L"File mapping fail\n");
 		return -1;
 	}
-
-	if (!createMap(data)) {
-		_ftprintf(stderr, L"File mapping fail\n");
-		return -1;
-	}
-
-	if (!createAirplaneSpace(data)) {
-		_ftprintf(stderr, L"File mapping fail\n");
-		return -1;
-	}
-
-	if (!createProducerConsumer(data)) {
-		_ftprintf(stderr, L"File mapping producer/consumer fail\n");
-		return -1;
-	}
-
-	data->controlPlanes = CreateSemaphore(NULL, data->maxAirplanes, data->maxAirplanes, _T("planeEntryControl")); //TODO: Acho que isto não devia estar aqui
 
 	_tprintf(L"Max airports do registry :  %d\nMax airplanes do registry : %d\nComando 'help' para mais informações.\n\n",data->maxAirports,data->maxAirplanes);
 	
@@ -199,7 +184,6 @@ int _tmain(int argc, TCHAR* argv[]) {
 	CloseHandle(data->objMap);
 	UnmapViewOfFile(data->airports);
 	CloseHandle(data->objAirports);
-
 	free(data);
 
 	return 0;

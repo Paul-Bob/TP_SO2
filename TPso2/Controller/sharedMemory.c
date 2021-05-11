@@ -64,6 +64,7 @@ int createAirportSpace(pDATA data) {
 }
 
 int createAirplaneSpace(pDATA data) {
+
 	data->objPlanes = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, data->maxAirplanes * sizeof(Plane), _T("planes"));
 
 	if (data->objPlanes == NULL) {
@@ -85,6 +86,7 @@ int createAirplaneSpace(pDATA data) {
 
 
 	data->nrAirplanes = 0;
+	data->controlPlanes = CreateSemaphore(NULL, data->maxAirplanes, data->maxAirplanes, _T("planeEntryControl"));
 
 	return 1;
 }

@@ -28,7 +28,6 @@ void interpretaComandoControlador(TCHAR* command, pDATA data) {
 		_tprintf(TEXT("- criar [nome] [x] [y] --> Criar novos aeroportos\n"));
 		_tprintf(TEXT("- listar               --> Lista aeroportos, aviões e passageiros\n"));
 		_tprintf(TEXT("- exit                 --> Encerra o sistema\n"));
-		//Dúvida: é suposto chamar o comando criar e entrar num menu de criação oou ex: 'criar AeroportoXPTO 200 432' ou seja criar nomeAeroporto X Y?
 		//Dúvida: igual para suspender/ativar, é suposto entrar num menu ou como fizemos em SO que era sAviaoXpTO aAviaoXpTO sendo o s para suspender e a para ativar?
 	}
 	else if (!_tcscmp(action, TEXT("listar"))) {
@@ -43,6 +42,8 @@ void interpretaComandoControlador(TCHAR* command, pDATA data) {
 		_tprintf(TEXT("Aeroportos:\n"));
 		for (int i = 0; i < data->nrAirports; i++)
 				_tprintf(TEXT("%s - [%d,%d]\n"), (data->airports+i)->name, (data->airports + i)->coordinates[0], (data->airports + i)->coordinates[1]);
+
+		_puttchar(L'\n');
 
 		_tprintf(TEXT("Avioes:\n"));
 		for (int i = 0; i < data->maxAirplanes; i++)

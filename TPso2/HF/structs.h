@@ -24,6 +24,7 @@ struct Aviao {
 	int maxCapacity, velocity, planeID, index;
 	TCHAR actualAirport[NAMESIZE];
 	TCHAR destinAirport[NAMESIZE];
+	TCHAR departureAirport[NAMESIZE];
 	Coordinate initial, current, final;
 	HANDLE heartbeatTimer;
 };

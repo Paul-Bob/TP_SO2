@@ -16,6 +16,11 @@ struct Dados {
 	HANDLE emptiesSemaphore;
 	HANDLE itemsSemaphore;
 	HANDLE objProducerConsumer;
+	HANDLE objAirports;
+	HANDLE objPlanes;
+	pPlane planes;
+	int maxAirports;
+	pAirport airports;
 	pProducerConsumer producerConsumer;
 };
 

@@ -59,36 +59,34 @@ int getMax(TCHAR* attribute, TCHAR* path) {
 int setInitialAirport(TCHAR* name, pData data) {
 	data->plane.initial.x = -1;
 
-	HANDLE objAirports = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, _T("airports"));
+	data->objAirports = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, _T("airports"));
 
-	if (objAirports == NULL) {
+	if (data->objAirports == NULL) {
 		_ftprintf(stderr, L"Impossível abrir o file mapping.\n");
 		return 0;
 	}
 
-	int maxAirports = getMax(MAX_AIRPORTS, KEY_PATH);
+	data->maxAirports = getMax(MAX_AIRPORTS, KEY_PATH);
 
-	pAirport airports = (pAirport)MapViewOfFile(objAirports, FILE_MAP_READ, 0, 0, maxAirports * sizeof(airport));
+	data->airports = (pAirport)MapViewOfFile(data->objAirports, FILE_MAP_READ, 0, 0, data->maxAirports * sizeof(airport));
 
-	if (airports == NULL) {
-		CloseHandle(objAirports);
+	if (data->airports == NULL) {
+		CloseHandle(data->objAirports);
 		_ftprintf(stderr, L"Impossível criar o map view.\n");
 		return 0;
 	}
 	
-	for (int i = 0; i < maxAirports; i++) {
-		if (!_tcscmp(name, airports[i].name)) {
-			data->plane.initial.x = airports[i].coordinates[X];
-			data->plane.initial.y = airports[i].coordinates[Y];
-			data->plane.current.x = airports[i].coordinates[X];
-			data->plane.current.y = airports[i].coordinates[Y];
+	for (int i = 0; i < data->maxAirports; i++) {
+		if (!_tcscmp(name, data->airports[i].name)) {
+			data->plane.initial.x = data->airports[i].coordinates[X];
+			data->plane.initial.y = data->airports[i].coordinates[Y];
+			data->plane.current.x = data->airports[i].coordinates[X];
+			data->plane.current.y = data->airports[i].coordinates[Y];
 			_tcscpy_s(data->plane.actualAirport, NAMESIZE, name);
 			_tcscpy_s(data->plane.destinAirport, NAMESIZE, _T("NULL"));
 			break;
 		}
 	}
-	UnmapViewOfFile(airports);
-	CloseHandle(objAirports);
 
 	if (data->plane.initial.x == -1) {
 		return 0;
@@ -151,7 +149,7 @@ int setDestinationAirport(TCHAR* destination, pData data) {
 int getArguments(int argc, LPTSTR argv[], pData data) {
 
 	if (argc != 4) {
-		_ftprintf(stderr, L"Argumentos para lançar o avião insuficientes\n");
+		_ftprintf(stderr, L"Lançamento avião: %s lotação velocidade aeroportoInicial\n", argv[0]);
 		return -1;
 	}
 	
@@ -196,14 +194,21 @@ int getValueOnPosition(pMap map, int x, int y) {
 }
 
 void initTrip(pData data) {
-	EnterCriticalSection(&data->criticalSection);
-	data->ongoingTrip = 1;
-	int auxOngoingTrip = 1; // para impedir acesso de leitura à critical section
-	LeaveCriticalSection(&data->criticalSection);
-	
-	_tprintf(L"[DEBUG] Trip começou \n");
 
-	notifyController(data, Departure);
+	int valid = 0;
+	for (int i = 0; i < data->maxAirports; i++) {
+		//se o destino existe e é diferente do atual entao prosegue
+		if (!_tcscmp(data->plane.destinAirport, data->airports[i].name) && _tcscmp(data->plane.destinAirport, data->plane.actualAirport)) {
+			valid = 1;
+			break;
+		}
+	}
+
+	if (!valid) {
+		_tprintf(L"Aeroporto destino fail. \n");
+		return;
+	}
+
 	HMODULE dll = LoadLibraryEx(_T("SO2_TP_DLL_2021"), NULL, 0);
 
 	if (dll == NULL) {
@@ -233,11 +238,24 @@ void initTrip(pData data) {
 		_ftprintf(stderr, _T("Impossível criar o map view.\n"));
 		return;
 	}
-	
+
+	EnterCriticalSection(&data->criticalSection);
+	data->ongoingTrip = 1;
+	int auxOngoingTrip = 1; // para impedir acesso de leitura à critical section
+	LeaveCriticalSection(&data->criticalSection);
+
+	_tprintf(L"[DEBUG] Trip começou \n");
+
+	_tcscpy_s(data->plane.departureAirport, NAMESIZE, data->plane.actualAirport);
+	_tcscpy_s(data->plane.actualAirport, NAMESIZE, _T("Fly"));
+
+	data->planes[data->plane.index] = data->plane;
+
+	notifyController(data, Departure);
+
+	//->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-------------------------------------------------
 	setPosition(map, data->plane.current.x, data->plane.current.y, 1); // Ocupa a posição de sobrevoar o aeroporto. Isto nao tira a indicação de aeroporto no mapa?!
 
-	_tcscpy_s(data->plane.actualAirport, NAMESIZE, _T("Fly"));
-	
 	do {
 		 Sleep(1000 / (DWORD)data->plane.velocity);
 
@@ -251,6 +269,7 @@ void initTrip(pData data) {
 			_tprintf(L"[DEBUG] Cheguei ao meu destino, tenho que avisar o controlador \n"); //TODO: Limpar o final
 			_tcscpy_s(data->plane.actualAirport, NAMESIZE, data->plane.destinAirport);
 			_tcscpy_s(data->plane.destinAirport, NAMESIZE, _T("NULL"));
+			data->planes[data->plane.index] = data->plane;
 			notifyController(data, Arrive);
 			break;
 		}
@@ -272,6 +291,7 @@ void initTrip(pData data) {
 			else {
 				//TODO: Podemos melhorar esta estrategia, para já estamos só a aguardar que os gordos desocupem a loja
 			}
+			data->planes[data->plane.index] = data->plane;
 			ReleaseMutex(mutex);
 		}
 		EnterCriticalSection(&data->criticalSection);
@@ -312,6 +332,7 @@ void initHeartbeatThread(pData data) {
 }
 
 int processCommand(TCHAR* command, pData data) {
+	_puttchar(L'\n');
 
 	if (!_tcscmp(command, TEXT("exit"))) {
 		EnterCriticalSection(&data->criticalSection);
@@ -321,12 +342,26 @@ int processCommand(TCHAR* command, pData data) {
 		return 0;
 	}
 
+	if (!_tcscmp(command, TEXT("help"))) {
+		_tprintf(TEXT("Comandos disponiveis:\n"));
+		_tprintf(TEXT("- info                 --> Info avião\n"));
+		_tprintf(TEXT("- iniciar              --> Inicia viagem.\n"));
+		_tprintf(TEXT("- destino [aeroporto]  --> Define aeroporto destino\n"));
+		_tprintf(TEXT("- exit                 --> Encerra o avião\n\n"));
+		return 1;
+	}
+
+	if (!_tcscmp(command, TEXT("info"))) {
+		_tprintf(L"ID Avião:  %d\nCapacidade: %d\nVelocidade: %d\nAeroporto: %s\nAeroporto destino: %s\nPassageiros embarcados: 0\n\n\n",
+			data->plane.planeID, data->plane.maxCapacity, data->plane.velocity, data->plane.actualAirport, data->plane.destinAirport);
+	}
+
 	EnterCriticalSection(&data->criticalSection);
 	int auxOngoingTrip = data->ongoingTrip;
 	LeaveCriticalSection(&data->criticalSection);
 
 	if (auxOngoingTrip == 1) {
-		_ftprintf(stderr, L"Viagem a decorrer. Aguarde.\n");
+		_ftprintf(stderr, L"Viagem a decorrer. Aguarde.\n\n");
 		return 1;
 	}
 
@@ -353,26 +388,26 @@ int processCommand(TCHAR* command, pData data) {
 int registerPlaneInController(pData data) {
 	int found = 0;
 
-	HANDLE objPlanes = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, _T("planes"));
+	data->objPlanes = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, _T("planes"));
 
-	if (objPlanes == NULL) {
+	if (data->objPlanes == NULL) {
 		_ftprintf(stderr, L"Impossível abrir o file mapping.\n");
 		return 0;
 	}
 
 	int maxPlanes = getMax(MAX_AIRPLANES, KEY_PATH);
 
-	pPlane planes = (pPlane)MapViewOfFile(objPlanes, FILE_MAP_ALL_ACCESS, 0, 0, maxPlanes * sizeof(Plane));
+	data->planes = (pPlane)MapViewOfFile(data->objPlanes, FILE_MAP_ALL_ACCESS, 0, 0, maxPlanes * sizeof(Plane));
 
-	if (planes == NULL) {
+	if (data->planes == NULL) {
 		_ftprintf(stderr, L"Impossível criar o map view.\n");
 		return 0;
 	}
 
 	for (int i = 0; i < maxPlanes; i++) {
-		if (planes[i].velocity == -1) {
+		if (data->planes[i].velocity == -1) {
 			data->plane.heartbeatTimer = NULL;
-			planes[i] = data->plane;
+			data->planes[i] = data->plane;
 			found = 1;
 			data->plane.index = i;
 			break;
@@ -394,6 +429,10 @@ void closePlane(pData data) {
 	CloseHandle(data->objProducerConsumer);
 	CloseHandle(data->emptiesSemaphore);
 	CloseHandle(data->itemsSemaphore);
+	UnmapViewOfFile(data->airports);
+	CloseHandle(data->objAirports);
+	UnmapViewOfFile(data->planes);
+	CloseHandle(data->objPlanes);
 }
 
 int _tmain(int argc, LPTSTR argv[]) {
@@ -409,9 +448,14 @@ int _tmain(int argc, LPTSTR argv[]) {
 		return 1;								 
 	}
 
-	_tprintf(L"Pedido de registo à torre de controlo...\n");
-	
 	Data data;
+
+	if (getArguments(argc, argv, &data) == -1) {
+		closePlane(&data);
+		return 1;
+	}
+
+	_tprintf(L"Pedido de registo à torre de controlo...\n");
 
 	data.controlSemaphore = OpenSemaphore(SEMAPHORE_MODIFY_STATE | SYNCHRONIZE, FALSE, _T("planeEntryControl"));
 
@@ -422,11 +466,6 @@ int _tmain(int argc, LPTSTR argv[]) {
 	}
 
 	WaitForSingleObject(data.controlSemaphore, INFINITE);
-
-	if (getArguments(argc, argv, &data) == -1) {
-		closePlane(&data);
-		return 1;
-	}
 
 	data.plane.planeID = GetCurrentProcessId();
 
@@ -479,6 +518,10 @@ int _tmain(int argc, LPTSTR argv[]) {
 	}
 
 	initHeartbeatThread(&data);
+
+	_tprintf(L"ID Avião:  %d\nCapacidade: %d\nVelocidade: %d\nAeroporto: %s\nComando 'help' para mais informações.\n\n",
+		data.plane.planeID, data.plane.maxCapacity, data.plane.velocity, data.plane.actualAirport);
+
 
 
 	TCHAR command[SIZE];
