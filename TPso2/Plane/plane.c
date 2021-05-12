@@ -290,10 +290,10 @@ void initTrip(pData data) {
 				map->matrix[nextX][nextY] = 1;
 			}
 			else {
-				if (map->matrix[nextX + 1][nextY - 1] == 0) {
-					data->plane->current.x = nextX + 1;
+				if (map->matrix[nextX][nextY - 1] == 0) {
+					data->plane->current.x = nextX;
 					data->plane->current.y = nextY - 1;
-					map->matrix[nextX + 1][nextY - 1] = 1;
+					map->matrix[nextX][nextY - 1] = 1;
 				}
 				else
 					_tprintf(_T("Não há espaço no ceu!"));
