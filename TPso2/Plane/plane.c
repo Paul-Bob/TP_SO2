@@ -131,6 +131,7 @@ int setDestinationAirport(TCHAR* destination, pData data) {
 				data->plane->final.x = airports[i].coordinates[X];
 				data->plane->final.y = airports[i].coordinates[Y];
 				_tcscpy_s(data->plane->destinAirport, NAMESIZE, destination);
+				_tprintf(TEXT("Aeroporto destino alterado para '%s'\n\n"),destination);
 				break;
 			}
 		}
@@ -140,6 +141,7 @@ int setDestinationAirport(TCHAR* destination, pData data) {
 	CloseHandle(objAirports);
 
 	if (data->plane->final.x == -1) {
+		_tprintf(TEXT("Aeroporto destino '%s' inválido\n\n"), destination);
 		return 0;
 	}
 
@@ -244,7 +246,8 @@ void initTrip(pData data) {
 	int auxOngoingTrip = 1; // para impedir acesso de leitura à critical section
 	LeaveCriticalSection(&data->criticalSection);
 
-	_tprintf(L"[DEBUG] Trip começou \n");
+	_tprintf(L"Descolagem efetuada, atualmente a voar em direção ao aeroporto '%s'\n\n",data->plane->destinAirport);
+	_tprintf(L"-> ");
 
 	_tcscpy_s(data->plane->departureAirport, NAMESIZE, data->plane->actualAirport);
 	_tcscpy_s(data->plane->actualAirport, NAMESIZE, _T("Fly"));
@@ -252,7 +255,7 @@ void initTrip(pData data) {
 	notifyController(data, Departure);
 
 	//->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-------------------------------------------------
-	setPosition(map, data->plane->current.x, data->plane->current.y, 1); // Ocupa a posição de sobrevoar o aeroporto. Isto nao tira a indicação de aeroporto no mapa?!
+	//setPosition(map, data->plane->current.x, data->plane->current.y, 1); // Ocupa a posição de sobrevoar o aeroporto. Isto nao tira a indicação de aeroporto no mapa?!
 
 	do {
 		 Sleep(1000 / (DWORD)data->plane->velocity);
@@ -264,7 +267,8 @@ void initTrip(pData data) {
 			continue;
 		}
 		else if (result == 0) {
-			_tprintf(L"[DEBUG] Cheguei ao meu destino, tenho que avisar o controlador \n"); //TODO: Limpar o final
+			_tprintf(L"Aterragem efetuada com sucesso no aeroporto '%s'\n\n",data->plane->destinAirport); //TODO: Limpar o final
+			_tprintf(L"-> ");
 			_tcscpy_s(data->plane->actualAirport, NAMESIZE, data->plane->destinAirport);
 			_tcscpy_s(data->plane->destinAirport, NAMESIZE, _T("NULL"));
 			notifyController(data, Arrive);
@@ -286,7 +290,7 @@ void initTrip(pData data) {
 				map->matrix[nextX][nextY] = 1;
 			}
 			else {
-				//TODO: Podemos melhorar esta estrategia, para já estamos só a aguardar que os gordos desocupem a loja
+				//fazer o aviao desviar
 			}
 			ReleaseMutex(mutex);
 		}
@@ -295,7 +299,6 @@ void initTrip(pData data) {
 		LeaveCriticalSection(&data->criticalSection);
 
 	} while (auxOngoingTrip);
-	_tprintf(L"[DEBUG] Trip terminou \n");
 	EnterCriticalSection(&data->criticalSection);
 	data->ongoingTrip = 0;
 	LeaveCriticalSection(&data->criticalSection);
@@ -348,8 +351,17 @@ int processCommand(TCHAR* command, pData data) {
 	}
 
 	if (!_tcscmp(command, TEXT("info"))) {
-		_tprintf(L"ID Avião:  %d\nCapacidade: %d\nVelocidade: %d\nAeroporto: %s\nAeroporto destino: %s\nPassageiros embarcados: 0\n\n\n",
-			data->plane->planeID, data->plane->maxCapacity, data->plane->velocity, data->plane->actualAirport, data->plane->destinAirport);
+		_tprintf(L"ID Avião:  %d\nCoordenadas: [%d,%d]\nCapacidade: %d\nVelocidade: %d\nPassageiros embarcados: 0\n",
+			data->plane->planeID, data->plane->current.x, data->plane->current.y, data->plane->maxCapacity, data->plane->velocity);
+		if(!_tcscmp(data->plane->actualAirport,_T("Fly")))
+			_tprintf(TEXT("Atualmente em voo com destino ao aeroporto '%s'\n"), data->plane->destinAirport);
+		else
+			_tprintf(TEXT("Em repouso no aeroporto '%s'\n"), data->plane->actualAirport);
+		if (!_tcscmp(data->plane->destinAirport, _T("NULL")))
+			_tprintf(TEXT("Aeroporto destino não definido.\n\n"));
+		else
+			_tprintf(TEXT("Aeroporto destino: '%s'.\n\n"), data->plane->destinAirport);
+		return 1;
 	}
 
 	EnterCriticalSection(&data->criticalSection);

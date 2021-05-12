@@ -11,10 +11,13 @@ int verifyPositions(pDATA data, int x, int y, int positions);
 void interpretaComandoControlador(TCHAR* command, pDATA data) {
 	_puttchar(L'\n');
 
-	TCHAR* action, *argument = NULL, *extra = NULL;
+	TCHAR* action = NULL, *argument = NULL, *extra = NULL;
 
 	//get first word from command line
 	action = _tcstok_s(command, L" ", &argument);
+
+	if (action == NULL)
+		return;
 
 	if (!_tcscmp(action, TEXT("exit"))) {
 		_tprintf(TEXT("see ya\n"));

@@ -14,11 +14,13 @@
 void printConsumedInfo(Protocol message, pPlane plane) {
 	switch (message.type) {
 	case Arrive:
-		_tprintf(L"O avião %d aterrou com sucesso no aeroporto '%s'", message.planeID, plane->actualAirport); 
+		_tprintf(L"O avião %d aterrou com sucesso no aeroporto '%s'\n\n", message.planeID, plane->actualAirport); 
+		_tprintf(L"-> ");
 		break;
 	case Departure:
-		_tprintf(L"O avião %d descolou com sucesso do aeroporto '%s' e tem como destino o aeroporto '%s'",
+		_tprintf(L"O avião %d descolou com sucesso do aeroporto '%s' e tem como destino o aeroporto '%s'\n\n",
 			message.planeID, plane->departureAirport, plane->destinAirport);
+		_tprintf(L"-> ");
 		break;
 	case Register:
 		_tprintf(_T("\n\nNovo registo de avião!\n"));
@@ -26,6 +28,7 @@ void printConsumedInfo(Protocol message, pPlane plane) {
 		_tprintf(_T("Aeroporto  : %s\n"), plane->actualAirport);
 		_tprintf(_T("Velocidade : %d\n"), plane->velocity);
 		_tprintf(_T("Capacidade : %d\n\n"), plane->maxCapacity);
+		_tprintf(L"-> ");
 		break;
 	}
 }
