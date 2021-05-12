@@ -1,2 +1,6 @@
 ﻿  controller.c
+  prepareEnv.c
+  sharedMemory.c
+  textUI.c
+  Generating Code...
   Controller.vcxproj -> C:\Users\pauli\Desktop\Trabalho\TPso2\Debug\Controller.exe

@@ -6,7 +6,7 @@
 
 typedef struct Dados Data, * pData;
 struct Dados {
-	Plane plane;
+	pPlane plane;
 	int ongoingTrip;
 	HANDLE tripThread;
 	HANDLE heartbeatThread;

@@ -41,14 +41,24 @@ void interpretaComandoControlador(TCHAR* command, pDATA data) {
 		}
 		_tprintf(TEXT("Aeroportos:\n"));
 		for (int i = 0; i < data->nrAirports; i++)
-				_tprintf(TEXT("%s - [%d,%d]\n"), (data->airports+i)->name, (data->airports + i)->coordinates[0], (data->airports + i)->coordinates[1]);
+				_tprintf(TEXT("[%3d,%3d] - %s\n"),
+					(data->airports + i)->coordinates[0], (data->airports + i)->coordinates[1], (data->airports + i)->name);
 
 		_puttchar(L'\n');
 
 		_tprintf(TEXT("Avioes:\n"));
 		for (int i = 0; i < data->maxAirplanes; i++)
-			if(data->planes[i].velocity != -1)
-				_tprintf(TEXT("plane in [%d,%d]\n"), data->planes[i].current.x, data->planes[i].current.y);
+			if (data->planes[i].velocity != -1) {
+				_tprintf(TEXT("[%3d,%3d] - Avião ID %d\n"), data->planes[i].current.x, data->planes[i].current.y, data->planes[i].planeID);
+				if (!_tcscmp(data->planes[i].actualAirport, _T("Fly"))) {
+					_tprintf(TEXT("Atualmente em voo!\n"));
+					_tprintf(TEXT("Aeroporto partida: %s\n"), data->planes[i].departureAirport);
+					_tprintf(TEXT("Aeroporto destino: %s\n"), data->planes[i].destinAirport);
+				}
+				else
+					_tprintf(TEXT("Atualmente em repouso no aeroporto %s\n"), data->planes[i].actualAirport);
+				_puttchar(L'\n');
+			}
 	}
 	else if (!_tcscmp(action, TEXT("criar"))) {
 

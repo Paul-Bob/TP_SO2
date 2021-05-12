@@ -31,7 +31,7 @@ void printConsumedInfo(Protocol message, pPlane plane) {
 }
 
 void removePlane(pRemovePlane removeData) {
-	_tprintf(L"[DEBUG] Remove\n");
+	//_tprintf(L"[DEBUG] Remove\n");
 	if (removeData == NULL) {
 		return;
 	}
@@ -56,7 +56,7 @@ void removePlane(pRemovePlane removeData) {
 		CloseHandle(removeData->plane->heartbeatTimer);
 	}
 
-	_tprintf(L"[DEBUG] Removi\n");
+	//_tprintf(L"[DEBUG] Removi\n");
 	_tprintf(L"ALERTA!!\n");
 	_tprintf(L"Conexão PERDIDA!\n");
 	_tprintf(_T("Avião ID   : %d\n\n"), removeData->plane->planeID);
@@ -66,7 +66,7 @@ void removePlane(pRemovePlane removeData) {
 }
 
 void initPlaneTimerThread(pRemovePlane removePlaneData) {
-	_tprintf(L"[DEBUG] Vou criar a thread do timer \n");
+	//_tprintf(L"[DEBUG] Vou criar a thread do timer \n");
 	HANDLE thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)removePlane, (LPVOID)removePlaneData, 0, NULL);
 	if (thread == NULL) {
 		_ftprintf(stderr, L"Não foi possível criar a thread do timer.\n");
@@ -74,10 +74,10 @@ void initPlaneTimerThread(pRemovePlane removePlaneData) {
 }
 
 void producerConsumer(pDATA data) {
-	_tprintf(L"[DEBUG] Estou na thread \n");
+	//_tprintf(L"[DEBUG] Estou na thread \n");
 	int planePos;
 	while (1) {
-		_tprintf(L"[DEBUG] Estou a espera de coisas \n");
+		//_tprintf(L"[DEBUG] Estou a espera de coisas \n");
 		WaitForSingleObject(data->itemsSemaphore, INFINITE);
 		Protocol message = data->producerConsumer->buffer[data->producerConsumer->out];
 		data->producerConsumer->out = (data->producerConsumer->out + 1) % DIM_BUFFER;
@@ -89,7 +89,7 @@ void producerConsumer(pDATA data) {
 			printConsumedInfo(message,&data->planes[planePos]);
 		}
 		else {
-			_tprintf(L"[DEBUG] Heartbeat %d \n, ", message.planeID);
+			//_tprintf(L"[DEBUG] Heartbeat %d \n, ", message.planeID);
 			if(data->planes[planePos].heartbeatTimer == NULL) {
 				data->planes[planePos].heartbeatTimer = CreateWaitableTimer(NULL, TRUE, NULL);
 				pRemovePlane removePlaneData = malloc(sizeof(RemovePlane));
@@ -163,7 +163,8 @@ int _tmain(int argc, TCHAR* argv[]) {
 		return -1;
 	}
 
-	_tprintf(L"Max airports do registry :  %d\nMax airplanes do registry : %d\nComando 'help' para mais informações.\n\n",data->maxAirports,data->maxAirplanes);
+	_tprintf(L"Max airports do registry :  %d\nMax airplanes do registry : %d\nComando 'help' para mais informações.\n\n",
+		data->maxAirports,data->maxAirplanes);
 	
 	initProducerConsumerThread(data);
 
