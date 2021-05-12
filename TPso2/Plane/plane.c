@@ -282,7 +282,7 @@ void initTrip(pData data) {
 			}
 			WaitForSingleObject(mutex, INFINITE);
 			if (map->matrix[nextX][nextY] == 0 || map->matrix[nextX][nextY] == 2) {
-				if (map->matrix[nextX][nextY] != 2) {
+				if (map->matrix[data->plane->current.x][data->plane->current.y] != 2) {
 					map->matrix[data->plane->current.x][data->plane->current.y] = 0;
 				}
 				data->plane->current.x = nextX;
@@ -290,7 +290,13 @@ void initTrip(pData data) {
 				map->matrix[nextX][nextY] = 1;
 			}
 			else {
-				//fazer o aviao desviar
+				if (map->matrix[nextX + 1][nextY - 1] == 0) {
+					data->plane->current.x = nextX + 1;
+					data->plane->current.y = nextY - 1;
+					map->matrix[nextX + 1][nextY - 1] = 1;
+				}
+				else
+					_tprintf(_T("Não há espaço no ceu!"));
 			}
 			ReleaseMutex(mutex);
 		}
@@ -430,7 +436,7 @@ int registerPlaneInController(pData data) {
 }
 
 void closePlane(pData data) {
-	ReleaseSemaphore(data->controlSemaphore, 1, NULL);
+	//ReleaseSemaphore(data->controlSemaphore, 1, NULL);
 	CloseHandle(data->controlSemaphore);
 	DeleteCriticalSection(&data->criticalSection);
 	CloseHandle(data->producerMutex);
@@ -459,6 +465,16 @@ int _tmain(int argc, LPTSTR argv[]) {
 
 	Data data;
 
+	data.controlSemaphore = OpenSemaphore(SEMAPHORE_MODIFY_STATE | SYNCHRONIZE, FALSE, _T("planeEntryControl"));
+
+	if (data.controlSemaphore == NULL) {
+		_ftprintf(stderr, _T("Impossível abrir semáforo."));
+		closePlane(&data);
+		return 1;
+	}
+
+	WaitForSingleObject(data.controlSemaphore, INFINITE);
+
 	if (!registerPlaneInController(&data)) {
 		_tprintf(TEXT("Problemas a registar o avião no controlador.\n"));
 		closePlane(&data);
@@ -471,18 +487,6 @@ int _tmain(int argc, LPTSTR argv[]) {
 	}
 
 	_tprintf(L"Pedido de registo à torre de controlo...\n");
-
-	data.controlSemaphore = OpenSemaphore(SEMAPHORE_MODIFY_STATE | SYNCHRONIZE, FALSE, _T("planeEntryControl"));
-
-	if (data.controlSemaphore == NULL) {
-		_ftprintf(stderr, _T("Impossível abrir semáforo."));
-		closePlane(&data);
-		return 1;
-	}
-
-	WaitForSingleObject(data.controlSemaphore, INFINITE);
-
-
 
 	InitializeCriticalSection(&data.criticalSection);
 
