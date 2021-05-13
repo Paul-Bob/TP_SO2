@@ -473,6 +473,8 @@ int _tmain(int argc, LPTSTR argv[]) {
 		return 1;
 	}
 
+	_tprintf(L"Pedido de registo à torre de controlo...\n");
+
 	WaitForSingleObject(data.controlSemaphore, INFINITE);
 
 	if (!registerPlaneInController(&data)) {
@@ -485,8 +487,6 @@ int _tmain(int argc, LPTSTR argv[]) {
 		closePlane(&data);
 		return 1;
 	}
-
-	_tprintf(L"Pedido de registo à torre de controlo...\n");
 
 	InitializeCriticalSection(&data.criticalSection);
 
