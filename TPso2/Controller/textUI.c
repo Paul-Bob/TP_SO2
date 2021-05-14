@@ -20,6 +20,8 @@ void interpretaComandoControlador(TCHAR* command, pDATA data) {
 		return;
 
 	if (!_tcscmp(action, TEXT("exit"))) {
+		for (int i = 0; i < data->maxAirplanes; i++)
+			data->planes[i].velocity = -500;
 		_tprintf(TEXT("see ya\n"));
 	}
 	else if (!_tcscmp(action, TEXT("help"))) {

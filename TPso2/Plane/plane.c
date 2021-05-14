@@ -317,6 +317,9 @@ void heartbeat(pData data) {
 	while (1) {
 		notifyController(data, Heartbeat);
 		Sleep(2500); // TODO: verificar se este é o melhor
+		if (data->planes[data->plane->index].velocity == -500) {
+			return;
+		}
 	}
 }
 
@@ -542,7 +545,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 		_tprintf(L"-> ");
 		_fgetts(command, SIZE, stdin);
 		command[_tcslen(command) - 1] = '\0';
-	} while (processCommand(command, &data) != 0);
+	} while (processCommand(command, &data) != 0 && data.planes[data.plane->index].velocity != -500);
 	
 	closePlane(&data);
 	return 0;
