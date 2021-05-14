@@ -545,7 +545,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 		_tprintf(L"-> ");
 		_fgetts(command, SIZE, stdin);
 		command[_tcslen(command) - 1] = '\0';
-	} while (processCommand(command, &data) != 0 && data.planes[data.plane->index].velocity != -500);
+	} while (data.planes[data.plane->index].velocity != -500 && processCommand(command, &data) != 0);
 	
 	closePlane(&data);
 	return 0;
