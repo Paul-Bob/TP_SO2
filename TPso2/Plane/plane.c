@@ -453,6 +453,11 @@ void closePlane(pData data) {
 	CloseHandle(data->objPlanes);
 }
 
+void undoRegister(pData data) {
+	ReleaseSemaphore(data->controlSemaphore, 1, NULL);
+	data->plane->velocity = -1;
+}
+
 int _tmain(int argc, LPTSTR argv[]) {
 
 #ifdef UNICODE
@@ -482,11 +487,13 @@ int _tmain(int argc, LPTSTR argv[]) {
 
 	if (!registerPlaneInController(&data)) {
 		_tprintf(TEXT("Problemas a registar o avião no controlador.\n"));
+		undoRegister(&data);
 		closePlane(&data);
 		return 1;
 	}
 
 	if (getArguments(argc, argv, &data) == -1) {
+		undoRegister(&data);
 		closePlane(&data);
 		return 1;
 	}
@@ -496,6 +503,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 	data.producerMutex = CreateMutex(0, FALSE, _T("producerMutex"));
 	if (data.producerMutex == NULL) {
 		_ftprintf(stderr, L"Não foi possível abrir o mutex do produtor.\n");
+		undoRegister(&data);
 		closePlane(&data);
 		return 1;
 	} 
@@ -505,6 +513,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 
 	if (data.objProducerConsumer == NULL) {
 		_ftprintf(stderr, L"Impossível abrir o file mapping do produtor/consumidor.\n");
+		undoRegister(&data);
 		closePlane(&data);
 		return 1;
 	}
@@ -513,6 +522,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 
 	if (data.producerConsumer == NULL) {
 		_ftprintf(stderr, L"Impossível criar o map view do produtor/consumidor.\n");
+		undoRegister(&data);
 		closePlane(&data);
 		return 1;
 	}
@@ -521,6 +531,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 
 	if (data.emptiesSemaphore == NULL) {
 		_ftprintf(stderr, _T("Impossível abrir semáforo dos items vazios."));
+		undoRegister(&data);
 		closePlane(&data);
 		return 1;
 	}
@@ -529,6 +540,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 
 	if (data.itemsSemaphore == NULL) {
 		_ftprintf(stderr, _T("Impossível abrir semáforo dos items."));
+		undoRegister(&data);
 		closePlane(&data);
 		return 1;
 	}
