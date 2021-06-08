@@ -10,7 +10,7 @@
 #define KEY_PATH TEXT("SOFTWARE\\TP_SO2\\")
 #define MAX_AIRPLANES TEXT("maxAirplanes")
 #define MAX_AIRPORTS  TEXT("maxAirports")
-#define DIM_BUFFER 50 
+#define DIM_BUFFER 50
 
 typedef struct Coordenada Coordinate, * pCoordinate;
 
@@ -44,10 +44,10 @@ struct produtorConsumidor {
 	Protocol buffer[DIM_BUFFER];
 };
 
-typedef struct aeroporto airport, * pAirport;                    
-struct aeroporto {                                                         
+typedef struct aeroporto airport, * pAirport;
+struct aeroporto {
 	TCHAR name[NAMESIZE];
-	int coordinates[2]; //sendo coordinates[0] o x 
+	int coordinates[2]; //sendo coordinates[0] o x
 };
 
 typedef struct mapa Map, * pMap;
@@ -75,12 +75,11 @@ struct dados {
 	int maxAirplanes , nrAirplanes;
 };
 
-typedef struct passageiro passenger, * pPassenger;
+typedef struct passageiro Passenger, * pPassenger;
 struct passageiro {
 	TCHAR name[NAMESIZE];
-	pAirport origin;
-	pAirport destiny;
-	long int waitingTime;
+	TCHAR origin[NAMESIZE];
+	TCHAR destiny[NAMESIZE];
 };
 
 
