@@ -11,6 +11,7 @@
 #define MAX_AIRPLANES TEXT("maxAirplanes")
 #define MAX_AIRPORTS  TEXT("maxAirports")
 #define DIM_BUFFER 50
+#define PIPENAME TEXT("\\\\.\\pipe\\pipeRegister")
 
 typedef struct Coordenada Coordinate, * pCoordinate;
 
@@ -67,6 +68,7 @@ struct dados {
 	HANDLE itemsSemaphore;
 	HANDLE emptiesSemaphore;
 	HANDLE controlPlanes;
+	HANDLE controlPassengerRegisterThread;
 	pProducerConsumer producerConsumer;
 	pMap map;
 	pAirport airports;
@@ -77,11 +79,19 @@ struct dados {
 
 typedef struct passageiro Passenger, * pPassenger;
 struct passageiro {
+	int id;
 	TCHAR name[NAMESIZE];
 	TCHAR origin[NAMESIZE];
 	TCHAR destiny[NAMESIZE];
 };
 
+enum messagePassengerType { RegisterPassenger };
+
+typedef struct protocoloPassageiro PassengerProtocol, * pPassengerProtocol;
+struct protocoloPassageiro {
+	enum messagePassengerType type;
+	Passenger passenger;
+};
 
 typedef struct removeAviao RemovePlane, * pRemovePlane;
 

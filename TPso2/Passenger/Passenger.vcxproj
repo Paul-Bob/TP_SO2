@@ -139,7 +139,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="passageiro.c" />
+    <ClCompile Include="passenger.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="passenger.h" />

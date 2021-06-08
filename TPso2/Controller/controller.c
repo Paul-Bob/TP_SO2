@@ -10,6 +10,7 @@
 #include "sharedMemory.h"
 
 #define SIZE 200
+#define BUFSIZE 2048
 
 void printConsumedInfo(Protocol message, pPlane plane) {
 	switch (message.type) {
@@ -121,6 +122,47 @@ void initProducerConsumerThread(pDATA data) {
 	}
 }
 
+void passengerRegister(pDATA data) {
+	while (1) {
+		HANDLE hPipe = CreateNamedPipe(
+			PIPENAME,
+			PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
+			PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
+			PIPE_UNLIMITED_INSTANCES,
+			BUFSIZE,
+			BUFSIZE,
+			100000,
+			NULL);
+		if(hPipe == INVALID_HANDLE_VALUE) {
+			_ftprintf(stderr, L"Não foi possível criar o pipe de registo.\n");
+			return;
+		}
+
+		_tprintf(L"[DEBUG] Controlador à espera que passageiros se registem...\n");
+
+		BOOL connected = ConnectNamedPipe(hPipe, NULL) ? TRUE : (GetLastError() == ERROR_PIPE_CONNECTED);
+
+		if (connected) {
+			// criar thread passageiro e guardar pipe		
+			_tprintf(L"[DEBUG] Passageiro connectado\n");
+		}
+		else {
+			CloseHandle(hPipe);
+		}
+
+	}
+}
+
+void initControlPassengerRegisterThread(pDATA data) {
+	_tprintf(L"[DEBUG] Vou criar a thread do registo\n");
+
+	data->controlPassengerRegisterThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)passengerRegister, (LPVOID)data, 0, NULL);
+	if (data->controlPassengerRegisterThread == NULL) {
+		_ftprintf(stderr, L"Não foi possível criar a thread do produtor consumidor.\n");
+	}
+}
+
+
 int _tmain(int argc, TCHAR* argv[]) {
 	TCHAR command[SIZE];
 	pDATA data;
@@ -170,6 +212,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 		data->maxAirports,data->maxAirplanes);
 	
 	initProducerConsumerThread(data);
+	initControlPassengerRegisterThread(data);
 
 	do {
 		_tprintf(L"-> ");

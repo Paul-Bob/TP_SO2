@@ -11,6 +11,8 @@ struct Dados {
 	HANDLE waitingTimeTimer;
 	long int waitingTime;
 	HANDLE processCommandThread;
+	HANDLE namedPipeReaderThread;
+	HANDLE hPipe;
 };
 
 #endif
