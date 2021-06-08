@@ -12,6 +12,13 @@
 #define SIZE 200
 #define BUFSIZE 2048
 
+typedef struct pipeEDados pipeAndData, * pPipeAndData;
+
+struct pipeEDados {
+	HANDLE pipe;
+	pDATA data;
+};
+
 void printConsumedInfo(Protocol message, pPlane plane) {
 	switch (message.type) {
 	case Arrive:
@@ -122,9 +129,121 @@ void initProducerConsumerThread(pDATA data) {
 	}
 }
 
-void passengerRegister(pDATA data) {
+int writeOnPipe(HANDLE pipe, PassengerProtocol message) {
+	HANDLE writeReadyEvent = CreateEvent(
+		NULL,
+		TRUE,
+		FALSE,
+		NULL);
+
+	if (writeReadyEvent == NULL) {
+		_ftprintf(stderr, L"Não foi possível criar o evento\n");
+		return -1;
+	}
+
+	OVERLAPPED overlappedWriteReady = { 0 };
+
+	ZeroMemory(&overlappedWriteReady, sizeof(overlappedWriteReady));
+	ResetEvent(writeReadyEvent);
+	overlappedWriteReady.hEvent = writeReadyEvent;
+
+	DWORD numberBytesWritten;
+
+	BOOL success = WriteFile(
+		pipe,
+		&message,
+		sizeof(PassengerProtocol),
+		&numberBytesWritten,
+		&overlappedWriteReady);
+
+	WaitForSingleObject(writeReadyEvent, INFINITE);
+	_tprintf(L"[DEBUG] Mensagem Enviada.\n");
+	return 1;
+}
+
+void processMessageFromPassenger(pPipeAndData pipeAndData, PassengerProtocol message) {
+	switch (message.type) {
+	case RegisterPassenger: {
+		BOOL origin = FALSE;
+		BOOL destiny = FALSE;
+		for (int i = 0; i < pipeAndData->data->maxAirports; i++) { //TODO: FALTA MUTEX
+			if (!_tcscmp(message.passenger.origin, pipeAndData->data->airports[i].name)) {
+				origin = TRUE;
+			} else if (!_tcscmp(message.passenger.destiny, pipeAndData->data->airports[i].name)) {
+				destiny = TRUE;
+			}
+		}
+
+		PassengerProtocol newMessage;
+		newMessage.type = RegisterPassenger;
+		newMessage.success = (origin && destiny);
+		writeOnPipe(pipeAndData->pipe, newMessage);
+
+		if (origin && destiny) {
+			//TODO: Registar passageiro
+		}
+
+		break;
+	}
+	}
+}
+
+void passengerThread(pPipeAndData pipeAndData) {
+	if (pipeAndData->pipe == NULL) {
+		_ftprintf(stderr, L"O Handle recebido na thread do reader está a NULL\n");
+		return;
+	}
+
+	HANDLE readReadyEvent = CreateEvent(
+		NULL,
+		TRUE,
+		FALSE,
+		NULL);
+
+	if (readReadyEvent == NULL) {
+		_ftprintf(stderr, L"A criação do evento na thread do reader deu erroL\n");
+		return;
+	}
+
+	OVERLAPPED overlappedReadReady = { 0 };
 	while (1) {
-		HANDLE hPipe = CreateNamedPipe(
+		ZeroMemory(&overlappedReadReady, sizeof(overlappedReadReady));
+		ResetEvent(readReadyEvent);
+		overlappedReadReady.hEvent = readReadyEvent;
+
+		DWORD numberBytesRead;
+		PassengerProtocol messageRead;
+
+		ReadFile(
+			pipeAndData->pipe,
+			&messageRead,
+			sizeof(PassengerProtocol),
+			&numberBytesRead,
+			&overlappedReadReady);
+
+		WaitForSingleObject(readReadyEvent, INFINITE);
+		_tprintf(L"[DEBUG] Mensagem lida.\n");
+
+		GetOverlappedResult(
+			pipeAndData->pipe,
+			&overlappedReadReady,
+			&numberBytesRead,
+			FALSE);
+
+		if (numberBytesRead < sizeof(PassengerProtocol)) {
+			_ftprintf(stderr, L"Acho que a leitura falhou\n");
+			continue;
+		}
+
+		processMessageFromPassenger(pipeAndData, messageRead);
+	}
+
+}
+
+void passengerRegister(pDATA data) {
+	HANDLE hPipe;
+	while (1) {
+		hPipe = CreateNamedPipe(
 			PIPENAME,
 			PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
 			PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
@@ -141,10 +260,27 @@ void passengerRegister(pDATA data) {
 		_tprintf(L"[DEBUG] Controlador à espera que passageiros se registem...\n");
 
 		BOOL connected = ConnectNamedPipe(hPipe, NULL) ? TRUE : (GetLastError() == ERROR_PIPE_CONNECTED);
+		pPipeAndData passengerThreadParameters = malloc(sizeof(pipeAndData));
+		passengerThreadParameters->data = data;
+		passengerThreadParameters->pipe = hPipe;
 
-		if (connected) {
-			// criar thread passageiro e guardar pipe		
+		if (connected) {	
 			_tprintf(L"[DEBUG] Passageiro connectado\n");
+			
+			HANDLE thread = CreateThread(
+				NULL,
+				0,
+				(LPTHREAD_START_ROUTINE)passengerThread,
+				(LPVOID)passengerThreadParameters,
+				0,
+				NULL);
+			if (thread == NULL) {
+				_ftprintf(stderr, L"Não foi possível criar a thread do passageiro.\n");
+				return;
+			}
+			else {
+				CloseHandle(thread);
+			}
 		}
 		else {
 			CloseHandle(hPipe);

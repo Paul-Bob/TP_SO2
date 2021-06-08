@@ -10,7 +10,7 @@
 #define SIZE 200
 
 void processMessageFromController(PassengerProtocol message) {
-	_tprintf(L"[DEBUG] Mensagem recebida do servidor: %d.\n", message.type);
+	_tprintf(L"[DEBUG] Mensagem recebida do servidor: %d %d.\n", message.type, message.success);
 }
 
 void readerThread(HANDLE hPipe) {
@@ -179,7 +179,7 @@ int getArguments(int argc, LPTSTR argv[], pData data) {
 	return 1;
 }
 
-int writeOnPipe(HANDLE pipe, pPassengerProtocol message) {
+int writeOnPipe(HANDLE pipe, PassengerProtocol message) {
 	HANDLE writeReadyEvent = CreateEvent(
 		NULL,
 		TRUE,
@@ -216,7 +216,7 @@ int registerOnController(pData data) {
 	registerMessage.type = RegisterPassenger;
 	registerMessage.passenger = *(data->passenger);
 
-	return writeOnPipe(data->hPipe, &registerMessage);
+	return writeOnPipe(data->hPipe, registerMessage);
 }
 
 

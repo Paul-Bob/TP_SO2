@@ -91,6 +91,7 @@ typedef struct protocoloPassageiro PassengerProtocol, * pPassengerProtocol;
 struct protocoloPassageiro {
 	enum messagePassengerType type;
 	Passenger passenger;
+	BOOL success;
 };
 
 typedef struct removeAviao RemovePlane, * pRemovePlane;
