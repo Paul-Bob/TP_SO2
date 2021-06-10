@@ -1,4 +1,5 @@
 ﻿  controller.c
+  prepareEnv.c
   sharedMemory.c
   textUI.c
   Generating Code...

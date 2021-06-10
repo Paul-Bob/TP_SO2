@@ -145,6 +145,7 @@
     <ClCompile Include="textUI.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="controller.h" />
     <ClInclude Include="prepareEnv.h" />
     <ClInclude Include="sharedMemory.h" />
     <ClInclude Include="textUI.h" />
