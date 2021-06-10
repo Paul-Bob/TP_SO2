@@ -8,16 +8,12 @@
 #include "prepareEnv.h"
 #include "textUI.h"
 #include "sharedMemory.h"
+#include "controller.h"
 
 #define SIZE 200
 #define BUFSIZE 2048
 
-typedef struct pipeEDados pipeAndData, * pPipeAndData;
 
-struct pipeEDados {
-	HANDLE pipe;
-	pDATA data;
-};
 
 void printConsumedInfo(Protocol message, pPlane plane) {
 	switch (message.type) {
@@ -299,7 +295,7 @@ void initControlPassengerRegisterThread(pDATA data) {
 }
 
 
-int _tmain(int argc, TCHAR* argv[]) {
+int _tmainCMD(int argc, TCHAR* argv[]) {
 	TCHAR command[SIZE];
 	pDATA data;
 
