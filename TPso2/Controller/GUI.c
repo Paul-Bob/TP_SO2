@@ -72,7 +72,9 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 		return -1;
 	}
 
-	data->nrAirplanes = 0;
+	data->nrPassengers = 0;
+	data->passengers = malloc(sizeof(Passenger) * MAX_PASSENGERS);
+	InitializeCriticalSection(&data->passengersCriticalSection);
 
 	//previne poder ter mais do que uma instância do mesmo programa a correr em simultâneo.
 	CreateMutexA(0, FALSE, "Local\\$controlador$"); // try to create a named mutex

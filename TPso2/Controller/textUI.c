@@ -45,23 +45,43 @@ void interpretaComandoControlador(TCHAR* command, pDATA data) {
 			return;
 		}
 		_tprintf(TEXT("Aeroportos:\n"));
-		for (int i = 0; i < data->nrAirports; i++)
-				_tprintf(TEXT("[%3d,%3d] - %s\n"),
-					(data->airports + i)->coordinates[0], (data->airports + i)->coordinates[1], (data->airports + i)->name);
+		for (int i = 0; i < data->nrAirports; i++) {
+			_tprintf(TEXT("[%3d,%3d] - %s\n"),
+				(data->airports + i)->coordinates[0], (data->airports + i)->coordinates[1], (data->airports + i)->name);
+			_tprintf(TEXT("---> Passageiros sem avião:\n"));
+			for (int j = 0; j < data->nrPassengers;j++){
+				if(data->passengers[j].planeID == -1 && !_tcscmp(data->passengers[j].origin, data->airports[i].name)) {
+				_tprintf(TEXT("    [ - ] - %s %d\n"), data->passengers[j].name, data->passengers[j].planeID);
+				}
+			}
+			_puttchar(L'\n');
 
+			for (int k = 0; k < data->maxAirplanes; k++) {
+				if (!_tcscmp(data->planes[k].actualAirport, data->airports[i].name)) {
+					_tprintf(TEXT("[%3d,%3d] - Avião ID %d\n"), data->planes[k].current.x, data->planes[k].current.y, data->planes[k].planeID);
+					_tprintf(TEXT("---> Passageiros embarcados:\n"));
+					for (int j = 0; j < data->nrPassengers; j++) {
+						if (data->passengers[j].planeID == data->planes[k].planeID) {
+							_tprintf(TEXT("    [ - ] - %s\n"), data->passengers[j].name);
+						}
+					}
+				}
+			}
+		}
 		_puttchar(L'\n');
 
-		_tprintf(TEXT("Avioes:\n"));
+		_tprintf(TEXT("Avioes em voo:\n"));
 		for (int i = 0; i < data->maxAirplanes; i++)
-			if (data->planes[i].velocity != -1) {
+			if (data->planes[i].velocity != -1 && !_tcscmp(data->planes[i].actualAirport, _T("Fly"))) {
 				_tprintf(TEXT("[%3d,%3d] - Avião ID %d\n"), data->planes[i].current.x, data->planes[i].current.y, data->planes[i].planeID);
-				if (!_tcscmp(data->planes[i].actualAirport, _T("Fly"))) {
-					_tprintf(TEXT("Atualmente em voo!\n"));
 					_tprintf(TEXT("Aeroporto partida: %s\n"), data->planes[i].departureAirport);
 					_tprintf(TEXT("Aeroporto destino: %s\n"), data->planes[i].destinAirport);
-				}
-				else
-					_tprintf(TEXT("Atualmente em repouso no aeroporto %s\n"), data->planes[i].actualAirport);
+					_tprintf(TEXT("---> Passageiros embarcados:\n"));
+					for (int j = 0; j < data->nrPassengers; j++) {
+						if (data->passengers[j].planeID == data->planes[i].planeID) {
+							_tprintf(TEXT("    [ - ] - %s\n"), data->passengers[j].name);
+						}
+					}
 				_puttchar(L'\n');
 			}
 	}

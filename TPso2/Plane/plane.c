@@ -7,8 +7,6 @@
 
 #include "plane.h"
 
-#define SIZE 200
-
 void notifyController(pData data, enum messageType type) {
 	WaitForSingleObject(data->emptiesSemaphore, INFINITE);
 	WaitForSingleObject(data->producerMutex, INFINITE);
@@ -58,7 +56,6 @@ int getMax(TCHAR* attribute, TCHAR* path) {
 
 int setInitialAirport(TCHAR* name, pData data) {
 	data->plane->initial.x = -1;
-
 	data->objAirports = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, _T("airports"));
 
 	if (data->objAirports == NULL) {
@@ -67,7 +64,6 @@ int setInitialAirport(TCHAR* name, pData data) {
 	}
 
 	data->maxAirports = getMax(MAX_AIRPORTS, KEY_PATH);
-
 	data->airports = (pAirport)MapViewOfFile(data->objAirports, FILE_MAP_READ, 0, 0, data->maxAirports * sizeof(airport));
 
 	if (data->airports == NULL) {
@@ -75,6 +71,15 @@ int setInitialAirport(TCHAR* name, pData data) {
 		_ftprintf(stderr, L"Impossível criar o map view.\n");
 		return 0;
 	}
+
+	HANDLE mutex = OpenMutex(SYNCHRONIZE, FALSE, _T("airportsMutex"));
+
+	if (mutex == NULL) {
+		_ftprintf(stderr, L"Não foi possível aceder aos aeroportos.\n");
+		CloseHandle(data->objAirports);
+		return 0;
+	}
+	WaitForSingleObject(mutex, INFINITE);
 	
 	for (int i = 0; i < data->maxAirports; i++) {
 		if (!_tcscmp(name, data->airports[i].name)) {
@@ -88,16 +93,16 @@ int setInitialAirport(TCHAR* name, pData data) {
 		}
 	}
 
+	ReleaseMutex(mutex);
+
 	if (data->plane->initial.x == -1) {
 		return 0;
 	}
-
 	return 1;
 }
 
 int setDestinationAirport(TCHAR* destination, pData data) {
 	data->plane->final.x = -1;
-
 	HANDLE objAirports = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, _T("airports"));
 
 	if (objAirports == NULL) {
@@ -106,7 +111,6 @@ int setDestinationAirport(TCHAR* destination, pData data) {
 	}
 
 	int maxAirports = getMax(MAX_AIRPORTS, KEY_PATH);
-
 	pAirport airports = (pAirport)MapViewOfFile(objAirports, FILE_MAP_READ, 0, 0, maxAirports * sizeof(airport));
 
 	if (airports == NULL) {
@@ -145,17 +149,16 @@ int setDestinationAirport(TCHAR* destination, pData data) {
 		return 0;
 	}
 
+	notifyController(data, PlaneUpdatedDestiny);
 	return 1;
 }
 
 int getArguments(int argc, LPTSTR argv[], pData data) {
-
 	if (argc != 4) {
 		_ftprintf(stderr, L"Lançamento avião: %s lotação velocidade aeroportoInicial\n", argv[0]);
 		return -1;
 	}
 	
-
 	if (_stscanf_s(argv[1], L"%d", &data->plane->maxCapacity) == 0) {
 		_ftprintf(stderr, L"Capacidade do avião inválida\n");
 		return -1;
@@ -196,7 +199,6 @@ int getValueOnPosition(pMap map, int x, int y) {
 }
 
 void initTrip(pData data) {
-
 	int valid = 0;
 	for (int i = 0; i < data->maxAirports; i++) {
 		//se o destino existe e é diferente do atual entao prosegue
@@ -254,9 +256,6 @@ void initTrip(pData data) {
 
 	notifyController(data, Departure);
 
-	//->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-------------------------------------------------
-	//setPosition(map, data->plane->current.x, data->plane->current.y, 1); // Ocupa a posição de sobrevoar o aeroporto. Isto nao tira a indicação de aeroporto no mapa?!
-
 	do {
 		 Sleep(1000 / (DWORD)data->plane->velocity);
 
@@ -299,6 +298,8 @@ void initTrip(pData data) {
 					_tprintf(_T("Não há espaço no ceu!"));
 			}
 			ReleaseMutex(mutex);
+
+			notifyController(data, PlaneUpdatePosition);
 		}
 		EnterCriticalSection(&data->criticalSection);
 		auxOngoingTrip = data->ongoingTrip;
@@ -420,6 +421,14 @@ int registerPlaneInController(pData data) {
 		_ftprintf(stderr, L"Impossível criar o map view.\n");
 		return 0;
 	}
+	HANDLE mutex = OpenMutex(SYNCHRONIZE, FALSE, _T("planesMutex"));
+
+	if (mutex == NULL) {
+		_ftprintf(stderr, L"Impossível aceder aos aviões.\n");
+		return 0;
+	}
+
+	WaitForSingleObject(mutex, INFINITE);
 
 	for (int i = 0; i < maxPlanes; i++) {
 		if (data->planes[i].velocity == -1) {
@@ -431,6 +440,7 @@ int registerPlaneInController(pData data) {
 			break;
 		}
 	}
+	ReleaseMutex(mutex);
 
 	if (!found)
 		return 0;
@@ -472,7 +482,6 @@ int _tmain(int argc, LPTSTR argv[]) {
 	}
 
 	Data data;
-
 	data.controlSemaphore = OpenSemaphore(SEMAPHORE_MODIFY_STATE | SYNCHRONIZE, FALSE, _T("planeEntryControl"));
 
 	if (data.controlSemaphore == NULL) {
@@ -507,7 +516,6 @@ int _tmain(int argc, LPTSTR argv[]) {
 		closePlane(&data);
 		return 1;
 	} 
-
 
 	data.objProducerConsumer = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, _T("producerConsumer"));
 

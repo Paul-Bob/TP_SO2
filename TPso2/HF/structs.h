@@ -1,4 +1,4 @@
-#ifndef STRUCTS_H
+﻿#ifndef STRUCTS_H
 #define STRUCTS_H
 
 #include <windows.h>
@@ -12,6 +12,7 @@
 #define MAX_AIRPORTS  TEXT("maxAirports")
 #define DIM_BUFFER 50
 #define PIPENAME TEXT("\\\\.\\pipe\\pipeRegister")
+#define MAX_PASSENGERS 50
 
 typedef struct Coordenada Coordinate, * pCoordinate;
 
@@ -30,7 +31,17 @@ struct Aviao {
 	HANDLE heartbeatTimer;
 };
 
-enum messageType { Register, Departure, Arrive, Heartbeat };
+typedef struct passageiro Passenger, * pPassenger;
+struct passageiro {
+	int id;
+	TCHAR name[NAMESIZE];
+	TCHAR origin[NAMESIZE];
+	TCHAR destiny[NAMESIZE];
+	int planeID; // se o valor for -1 quer dizer que est� na origin
+	HANDLE pipe;
+};
+
+enum messageType { Register, Departure, Arrive, Heartbeat, PlaneUpdatedDestiny, PlaneUpdatePosition };
 
 typedef struct protocolo Protocol, * pProtocol;
 struct protocolo {
@@ -62,6 +73,8 @@ struct dados {
 	HANDLE objAirports;
 	HANDLE objPlanes;
 	HANDLE objProducerConsumer;
+	CRITICAL_SECTION passengersCriticalSection;
+	HANDLE planesMutex;
 	HANDLE airportsMutex;
 	HANDLE mapMutex;
 	HANDLE producerConsumerThread;
@@ -73,26 +86,21 @@ struct dados {
 	pMap map;
 	pAirport airports;
 	pPlane planes;
+	pPassenger passengers;
 	int maxAirports  , nrAirports;
 	int maxAirplanes , nrAirplanes;
+	int nrPassengers;
 	HWND hwndList;
 };
 
-typedef struct passageiro Passenger, * pPassenger;
-struct passageiro {
-	int id;
-	TCHAR name[NAMESIZE];
-	TCHAR origin[NAMESIZE];
-	TCHAR destiny[NAMESIZE];
-};
-
-enum messagePassengerType { RegisterPassenger };
+enum messagePassengerType { RegisterPassenger, DeparturePassenger, ArrivePassenger, FoundPlane, UpdatePositionPassenger };
 
 typedef struct protocoloPassageiro PassengerProtocol, * pPassengerProtocol;
 struct protocoloPassageiro {
 	enum messagePassengerType type;
 	Passenger passenger;
 	BOOL success;
+	Coordinate coordinates;
 };
 
 typedef struct removeAviao RemovePlane, * pRemovePlane;

@@ -1,4 +1,4 @@
-#include <windows.h>
+ï»¿#include <windows.h>
 #include <tchar.h>
 #include <io.h>
 #include <fcntl.h>
@@ -20,17 +20,17 @@ void printConsumedInfo(Protocol message, pPlane plane, HWND hwndList) {
 	if(hwndList == NULL)
 		switch (message.type) {
 		case Arrive:
-			_tprintf(L"O avião %d aterrou com sucesso no aeroporto '%s'\n\n", message.planeID, plane->actualAirport); 
+			_tprintf(L"O aviÃ£o %d aterrou com sucesso no aeroporto '%s'\n\n", message.planeID, plane->actualAirport); 
 			_tprintf(L"-> ");
 			break;
 		case Departure:
-			_tprintf(L"O avião %d descolou com sucesso do aeroporto '%s' e tem como destino o aeroporto '%s'\n\n",
+			_tprintf(L"O aviÃ£o %d descolou com sucesso do aeroporto '%s' e tem como destino o aeroporto '%s'\n\n",
 				message.planeID, plane->departureAirport, plane->destinAirport);
 			_tprintf(L"-> ");
 			break;
 		case Register:
-			_tprintf(_T("\n\nNovo registo de avião!\n"));
-			_tprintf(_T("Avião ID   : %d\n"), message.planeID);
+			_tprintf(_T("\n\nNovo registo de aviÃ£o!\n"));
+			_tprintf(_T("AviÃ£o ID   : %d\n"), message.planeID);
 			_tprintf(_T("Aeroporto  : %s\n"), plane->actualAirport);
 			_tprintf(_T("Velocidade : %d\n"), plane->velocity);
 			_tprintf(_T("Capacidade : %d\n\n"), plane->maxCapacity);
@@ -41,21 +41,21 @@ void printConsumedInfo(Protocol message, pPlane plane, HWND hwndList) {
 		switch (message.type) {
 		case Arrive:
 			SendMessage(hwndList, LB_ADDSTRING, 0, _T(""));
-			_stprintf_s(myMessage, 500, _TEXT("O avião %d aterrou com sucesso no aeroporto '%s'"), message.planeID, plane->actualAirport);
+			_stprintf_s(myMessage, 500, _TEXT("O aviÃ£o %d aterrou com sucesso no aeroporto '%s'"), message.planeID, plane->actualAirport);
 			SendMessage(hwndList, LB_ADDSTRING, 0, myMessage);
 			break;
 		case Departure:
 			SendMessage(hwndList, LB_ADDSTRING, 0, _T(""));
 
-			_stprintf_s(myMessage, 500, _TEXT("O avião %d descolou com sucesso do aeroporto '%s' e tem como destino o aeroporto '%s'"),
+			_stprintf_s(myMessage, 500, _TEXT("O aviÃ£o %d descolou com sucesso do aeroporto '%s' e tem como destino o aeroporto '%s'"),
 				message.planeID, plane->departureAirport, plane->destinAirport);
 			SendMessage(hwndList, LB_ADDSTRING, 0, myMessage);
 			break;
 		case Register:
 			SendMessage(hwndList, LB_ADDSTRING, 0, _T(""));
 
-			SendMessage(hwndList, LB_ADDSTRING, 0, _T("Novo registo de avião!"));
-			_stprintf_s(myMessage, 500, _T("Avião ID   : %d\n"), message.planeID);
+			SendMessage(hwndList, LB_ADDSTRING, 0, _T("Novo registo de aviÃ£o!"));
+			_stprintf_s(myMessage, 500, _T("AviÃ£o ID   : %d\n"), message.planeID);
 			SendMessage(hwndList, LB_ADDSTRING, 0, myMessage);
 			_stprintf_s(myMessage, 500, _T("Aeroporto  : %s\n"), plane->actualAirport);
 			SendMessage(hwndList, LB_ADDSTRING, 0, myMessage);
@@ -68,9 +68,48 @@ void printConsumedInfo(Protocol message, pPlane plane, HWND hwndList) {
 
 }
 
+void assignPassengersToPlane(pDATA data) {
+	for (int j = 0; j < data->nrPassengers; j++) { //TODO: Mudar isto para nï¿½o limpar tudo mas apenas os que for necessï¿½rio
+		data->passengers[j].planeID = -1;
+	}
+	int nrAirplanes = getNumberOfAirplanes(data);
+	WaitForSingleObject(data->planesMutex, INFINITE);
+	for (int i = 0; i < nrAirplanes; i++) {
+		if (!_tcscmp(data->planes[i].actualAirport, _T("Fly"))) {
+			continue;
+		}
+
+		int airplineNumberOfCurrentPassengers = 0;
+		EnterCriticalSection(&data->passengersCriticalSection);
+		for (int j = 0; j < data->nrPassengers; j++) {
+			if (!_tcscmp(data->planes[i].actualAirport, data->passengers[j].origin) && !_tcscmp(data->planes[i].destinAirport, data->passengers[j].destiny)) {
+				if (airplineNumberOfCurrentPassengers < data->planes[i].maxCapacity) {
+					data->passengers[j].planeID = data->planes[i].planeID;
+					sendMessageToPassengersOfPlane(data, data->planes[i].planeID, FoundPlane);
+					airplineNumberOfCurrentPassengers++;
+				}
+			}
+		}
+		LeaveCriticalSection(&data->passengersCriticalSection);
+	}
+	ReleaseMutex(data->planesMutex);
+}
+
+int getNumberOfAirplanes(pDATA data) {
+	WaitForSingleObject(data->planesMutex, INFINITE);
+	for (int i = 0; i < data->maxAirplanes; i++) {
+		if (data->planes[i].velocity == -1) {
+			ReleaseMutex(data->planesMutex);
+			return i;
+		}
+	}
+	ReleaseMutex(data->planesMutex);
+	return data->maxAirplanes;
+}
+
 
 void removePlane(pRemovePlane removeData) {
-	//_tprintf(L"[DEBUG] Remove\n");
+	//TODO: Falta mutexes
 	if (removeData == NULL) {
 		return;
 	}
@@ -83,7 +122,7 @@ void removePlane(pRemovePlane removeData) {
 	if (x > 0 && x < MAPSIZE && y > 0 && y < MAPSIZE) {
 		removeData->map->matrix[x][y] = 0; // Limpa o mapa
 	}
-	removeData->plane->velocity = -1; // Torna o espaço novamente vazio;
+	removeData->plane->velocity = -1; // Torna o espaï¿½o novamente vazio;
 	removeData->plane->current.x = -1;
 	removeData->plane->current.y = -1;
 	removeData->plane->initial.x = -1;
@@ -91,14 +130,14 @@ void removePlane(pRemovePlane removeData) {
 	removeData->plane->final.x = -1;
 	removeData->plane->final.y = -1;
 	removeData->plane->maxCapacity = -1;
+
 	if (removeData->plane->heartbeatTimer != NULL) {
 		CloseHandle(removeData->plane->heartbeatTimer);
 	}
 
-	//_tprintf(L"[DEBUG] Removi\n");
 	_tprintf(L"ALERTA!!\n");
-	_tprintf(L"Conexão PERDIDA!\n");
-	_tprintf(_T("Avião ID   : %d\n\n"), removeData->plane->planeID);
+	_tprintf(L"Conexï¿½o PERDIDA!\n");
+	_tprintf(_T("Aviï¿½o ID   : %d\n\n"), removeData->plane->planeID);
 	removeData->plane->planeID = -1;
 	ReleaseSemaphore(removeData->controll, 1, NULL);
 	free(removeData);
@@ -108,15 +147,50 @@ void initPlaneTimerThread(pRemovePlane removePlaneData) {
 	//_tprintf(L"[DEBUG] Vou criar a thread do timer \n");
 	HANDLE thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)removePlane, (LPVOID)removePlaneData, 0, NULL);
 	if (thread == NULL) {
-		_ftprintf(stderr, L"Não foi possível criar a thread do timer.\n");
+		_ftprintf(stderr, L"Nï¿½o foi possï¿½vel criar a thread do timer.\n");
 	}
 }
 
+pPlane getPlane(pDATA data, int planeID) {
+	int nrAirplanes = getNumberOfAirplanes(data);
+	WaitForSingleObject(data->planesMutex, INFINITE);
+
+	for (int i = 0; i < nrAirplanes; i++) {
+		if (data->planes[i].planeID == planeID) {
+			ReleaseMutex(data->planesMutex);
+			return &data->planes[i];
+		}
+	}
+	ReleaseMutex(data->planesMutex);
+	return NULL;
+}
+
+void sendMessageToPassengersOfPlane(pDATA data, int planeID, enum messagePassengerType type) {
+	PassengerProtocol message;
+	message.type = type;
+	pPlane plane = getPlane(data, planeID);
+	if (plane != NULL) {
+		message.coordinates.x = plane->current.x;
+		message.coordinates.y = plane->current.y;
+	} 
+
+	if (type == UpdatePositionPassenger && plane == NULL) {
+		_ftprintf(stderr, L"Nï¿½o foi possï¿½vel enviar mensagem.\n");
+		return;
+	}
+	EnterCriticalSection(&data->passengersCriticalSection);
+	for (int i = 0; i < data->nrPassengers; i++) {
+		if (data->passengers[i].planeID == planeID) {
+			writeOnPipe(data->passengers[i].pipe, message);
+		}
+	}
+	LeaveCriticalSection(&data->passengersCriticalSection);
+}
+
 void producerConsumer(pDATA data) {
-	//_tprintf(L"[DEBUG] Estou na thread \n");
 	int planePos;
 	while (1) {
-		//_tprintf(L"[DEBUG] Estou a espera de coisas \n");
+		//_tprintf(L"[DEBUG] Estou a espera... \n");
 		WaitForSingleObject(data->itemsSemaphore, INFINITE);
 		Protocol message = data->producerConsumer->buffer[data->producerConsumer->out];
 		data->producerConsumer->out = (data->producerConsumer->out + 1) % DIM_BUFFER;
@@ -124,8 +198,23 @@ void producerConsumer(pDATA data) {
 
 		planePos = message.index;
 
-		if (message.type == Arrive || message.type == Departure || message.type == Register) {
-			printConsumedInfo(message,&data->planes[planePos],data->hwndList);
+		if (message.type == Register) {
+			printConsumedInfo(message,&data->planes[planePos], data->hwndList);
+		}
+		else if (message.type == Arrive){
+			printConsumedInfo(message, &data->planes[planePos], data->hwndList);
+			sendMessageToPassengersOfPlane(data, data->planes[planePos].planeID, ArrivePassenger);
+		}
+		else if (message.type == Departure) {
+			printConsumedInfo(message, &data->planes[planePos], data->hwndList);
+			sendMessageToPassengersOfPlane(data, data->planes[planePos].planeID, DeparturePassenger);
+		}
+		else if (message.type == PlaneUpdatePosition) {
+			printConsumedInfo(message, &data->planes[planePos], data->hwndList);
+			sendMessageToPassengersOfPlane(data, data->planes[planePos].planeID, UpdatePositionPassenger);
+		}
+		else if (message.type == PlaneUpdatedDestiny) {
+			assignPassengersToPlane(data);
 		}
 		else {
 			//_tprintf(L"[DEBUG] Heartbeat %d \n, ", message.planeID);
@@ -150,10 +239,9 @@ void producerConsumer(pDATA data) {
 }
 
 void initProducerConsumerThread(pDATA data) {
-	//_tprintf(L"[DEBUG] Vou criar a thread \n");
 	data->producerConsumerThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)producerConsumer, (LPVOID) data, 0, NULL);
 	if (data->producerConsumerThread == NULL) {
-		_ftprintf(stderr, L"Não foi possível criar a thread do produtor consumidor.\n");
+		_ftprintf(stderr, L"Nï¿½o foi possï¿½vel criar a thread do produtor consumidor.\n");
 	}
 }
 
@@ -165,7 +253,7 @@ int writeOnPipe(HANDLE pipe, PassengerProtocol message) {
 		NULL);
 
 	if (writeReadyEvent == NULL) {
-		_ftprintf(stderr, L"Não foi possível criar o evento\n");
+		_ftprintf(stderr, L"Nï¿½o foi possï¿½vel criar o evento\n");
 		return -1;
 	}
 
@@ -189,36 +277,61 @@ int writeOnPipe(HANDLE pipe, PassengerProtocol message) {
 	return 1;
 }
 
+void registerPassenger(pDATA data, Passenger passenger) {
+	passenger.planeID = -1;
+	data->passengers[data->nrPassengers] = passenger;
+	data->nrPassengers++;
+	assignPassengersToPlane(data);
+}
+
 void processMessageFromPassenger(pPipeAndData pipeAndData, PassengerProtocol message) {
 	switch (message.type) {
-	case RegisterPassenger: {
-		BOOL origin = FALSE;
-		BOOL destiny = FALSE;
-		for (int i = 0; i < pipeAndData->data->maxAirports; i++) { //TODO: FALTA MUTEX
-			if (!_tcscmp(message.passenger.origin, pipeAndData->data->airports[i].name)) {
-				origin = TRUE;
-			} else if (!_tcscmp(message.passenger.destiny, pipeAndData->data->airports[i].name)) {
-				destiny = TRUE;
+		case RegisterPassenger: {
+			BOOL origin = FALSE;
+			BOOL destiny = FALSE;
+			WaitForSingleObject(pipeAndData->data->airportsMutex, INFINITE);
+
+			for (int i = 0; i < pipeAndData->data->maxAirports; i++) { //TODO: FALTA MUTEX
+				if (!_tcscmp(message.passenger.origin, pipeAndData->data->airports[i].name)) {
+					origin = TRUE;
+				} else if (!_tcscmp(message.passenger.destiny, pipeAndData->data->airports[i].name)) {
+					destiny = TRUE;
+				}
 			}
+			ReleaseMutex(pipeAndData->data->airportsMutex);
+
+			PassengerProtocol newMessage;
+			newMessage.type = RegisterPassenger;
+			newMessage.success = (origin && destiny);
+			writeOnPipe(pipeAndData->pipe, newMessage);
+
+			if (origin && destiny) {
+				message.passenger.pipe = pipeAndData->pipe;
+				registerPassenger(pipeAndData->data, message.passenger);
+			}
+			break;
 		}
+	}
+}
 
-		PassengerProtocol newMessage;
-		newMessage.type = RegisterPassenger;
-		newMessage.success = (origin && destiny);
-		writeOnPipe(pipeAndData->pipe, newMessage);
-
-		if (origin && destiny) {
-			//TODO: Registar passageiro
+void removePassenger(pDATA data, int idPassenger) {
+	EnterCriticalSection(&data->passengersCriticalSection);
+	for (int i = 0; i < data->nrPassengers; i++) { 
+		if (data->passengers[i].id == idPassenger) {
+			for (int k = i + 1; k < data->nrPassengers; k++, i++) {
+				data->passengers[i] = data->passengers[k];
+			}
+			data->nrPassengers--;
+			LeaveCriticalSection(&data->passengersCriticalSection);
+			return;
 		}
-
-		break;
 	}
-	}
+	LeaveCriticalSection(&data->passengersCriticalSection);
 }
 
 void passengerThread(pPipeAndData pipeAndData) {
 	if (pipeAndData->pipe == NULL) {
-		_ftprintf(stderr, L"O Handle recebido na thread do reader está a NULL\n");
+		_ftprintf(stderr, L"O Handle recebido na thread do reader estï¿½ a NULL\n");
 		return;
 	}
 
@@ -229,9 +342,11 @@ void passengerThread(pPipeAndData pipeAndData) {
 		NULL);
 
 	if (readReadyEvent == NULL) {
-		_ftprintf(stderr, L"A criação do evento na thread do reader deu erroL\n");
+		_ftprintf(stderr, L"A criaï¿½ï¿½o do evento na thread do reader deu erroL\n");
 		return;
 	}
+
+	int idPassenger = -1; // Para controlar quando o passageiro decide ir ï¿½ vida dele
 
 	OVERLAPPED overlappedReadReady = { 0 };
 	while (1) {
@@ -241,8 +356,9 @@ void passengerThread(pPipeAndData pipeAndData) {
 
 		DWORD numberBytesRead;
 		PassengerProtocol messageRead;
+		messageRead.passenger.id = -1;
 
-		ReadFile(
+		BOOL success = ReadFile(
 			pipeAndData->pipe,
 			&messageRead,
 			sizeof(PassengerProtocol),
@@ -250,7 +366,11 @@ void passengerThread(pPipeAndData pipeAndData) {
 			&overlappedReadReady);
 
 		WaitForSingleObject(readReadyEvent, INFINITE);
-		_tprintf(L"[DEBUG] Mensagem lida.\n");
+		// _tprintf(L"[DEBUG] Mensagem lida.\n");
+		
+		if (messageRead.passenger.id != -1) {
+			idPassenger = messageRead.passenger.id;
+		}
 
 		GetOverlappedResult(
 			pipeAndData->pipe,
@@ -259,13 +379,14 @@ void passengerThread(pPipeAndData pipeAndData) {
 			FALSE);
 
 		if (numberBytesRead < sizeof(PassengerProtocol)) {
-			_ftprintf(stderr, L"Acho que a leitura falhou\n");
+			if (idPassenger != -1) {
+				removePassenger(pipeAndData->data, idPassenger);
+			}
 			continue;
 		}
 
 		processMessageFromPassenger(pipeAndData, messageRead);
 	}
-
 }
 
 void passengerRegister(pDATA data) {
@@ -281,14 +402,18 @@ void passengerRegister(pDATA data) {
 			100000,
 			NULL);
 		if(hPipe == INVALID_HANDLE_VALUE) {
-			_ftprintf(stderr, L"Não foi possível criar o pipe de registo.\n");
+			_ftprintf(stderr, L"Nï¿½o foi possï¿½vel criar o pipe de registo.\n");
 			return;
 		}
 
-		_tprintf(L"[DEBUG] Controlador à espera que passageiros se registem...\n");
+		_tprintf(L"[DEBUG] Controlador ï¿½ espera que passageiros se registem...\n");
 
 		BOOL connected = ConnectNamedPipe(hPipe, NULL) ? TRUE : (GetLastError() == ERROR_PIPE_CONNECTED);
 		pPipeAndData passengerThreadParameters = malloc(sizeof(pipeAndData));
+		if(passengerThreadParameters == NULL) {
+			_ftprintf(stderr, L"Nï¿½o foi possï¿½vel realizar o malloc.\n");
+			return;
+		}
 		passengerThreadParameters->data = data;
 		passengerThreadParameters->pipe = hPipe;
 
@@ -303,26 +428,24 @@ void passengerRegister(pDATA data) {
 				0,
 				NULL);
 			if (thread == NULL) {
-				_ftprintf(stderr, L"Não foi possível criar a thread do passageiro.\n");
+				_ftprintf(stderr, L"Nï¿½o foi possï¿½vel criar a thread do passageiro.\n");
+				CloseHandle(hPipe);
 				return;
 			}
-			else {
-				CloseHandle(thread);
-			}
+			CloseHandle(thread);
 		}
 		else {
 			CloseHandle(hPipe);
 		}
-
 	}
 }
 
 void initControlPassengerRegisterThread(pDATA data) {
-	_tprintf(L"[DEBUG] Vou criar a thread do registo\n");
+	// _tprintf(L"[DEBUG] Vou criar a thread do registo\n");
 
 	data->controlPassengerRegisterThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)passengerRegister, (LPVOID)data, 0, NULL);
 	if (data->controlPassengerRegisterThread == NULL) {
-		_ftprintf(stderr, L"Não foi possível criar a thread do produtor consumidor.\n");
+		_ftprintf(stderr, L"Nï¿½o foi possï¿½vel criar a thread do produtor consumidor.\n");
 	}
 }
 
@@ -337,9 +460,11 @@ int _tmainCMD(int argc, TCHAR* argv[]) {
 		return -1;
 	}
 
-	data->nrAirplanes = 0;
+	data->nrPassengers = 0;
+	data->passengers = malloc(sizeof(Passenger) * MAX_PASSENGERS);
+	InitializeCriticalSection(&data->passengersCriticalSection);
 
-	//previne poder ter mais do que uma instância do mesmo programa a correr em simultâneo.
+	//previne poder ter mais do que uma instï¿½ncia do mesmo programa a correr em simultï¿½neo.
 	CreateMutexA(0, FALSE, "Local\\$controlador$"); // try to create a named mutex
 	if (GetLastError() == ERROR_ALREADY_EXISTS) {   // did the mutex already exist?
 		puts("Already running!");
@@ -352,13 +477,13 @@ int _tmainCMD(int argc, TCHAR* argv[]) {
 	(void)_setmode(_fileno(stderr), _O_WTEXT);
 #endif
 
-	//Coloca as variaveis no registry caso não estejam onde é esperado...
+	//Coloca as variaveis no registry caso nï¿½o estejam onde ï¿½ esperado...
 	if (!prepareEnvironment(KEY_PATH)) {
 		puts("Registry fail!");
 		return -1;
 	}
 
-	//Obtém variáveis que supostamente estão no Registry
+	//Obtï¿½m variï¿½veis que supostamente estï¿½o no Registry
 	data->maxAirplanes = getMax(MAX_AIRPLANES,KEY_PATH);
 	data->maxAirports  = getMax(MAX_AIRPORTS,KEY_PATH);
 	if (!data->maxAirplanes || !data->maxAirports) {
@@ -366,13 +491,13 @@ int _tmainCMD(int argc, TCHAR* argv[]) {
 		return -1;
 	}
 
-	//estas funções internamente fornecem mais informações caso algo falhe
+	//estas funï¿½ï¿½es internamente fornecem mais informaï¿½ï¿½es caso algo falhe
 	if (!createAirportSpace(data) || !createMap(data) || !createAirplaneSpace(data) || !createProducerConsumer(data)) {
 		_ftprintf(stderr, L"File mapping fail\n");
 		return -1;
 	}
 
-	_tprintf(L"Max airports do registry :  %d\nMax airplanes do registry : %d\nComando 'help' para mais informações.\n\n",
+	_tprintf(L"Max airports do registry :  %d\nMax airplanes do registry : %d\nComando 'help' para mais informaï¿½ï¿½es.\n\n",
 		data->maxAirports,data->maxAirplanes);
 	
 	initProducerConsumerThread(data);
@@ -396,6 +521,5 @@ int _tmainCMD(int argc, TCHAR* argv[]) {
 	UnmapViewOfFile(data->airports);
 	CloseHandle(data->objAirports);
 	free(data);
-
 	return 0;
 }

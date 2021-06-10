@@ -2,31 +2,65 @@
 #include <tchar.h>
 #include <io.h>
 #include <fcntl.h>
+#include <process.h>
 #include <stdio.h>
 
-#include "../HF/structs.h"
 #include "passenger.h"
 
-#define SIZE 200
-
-void processMessageFromController(PassengerProtocol message) {
-	_tprintf(L"[DEBUG] Mensagem recebida do servidor: %d %d.\n", message.type, message.success);
+void closeHandlers(pData data) {
+	CloseHandle(data->readReadyEvent);
+	CloseHandle(data->hPipe);
+	CloseHandle(data->waitingTimeTimer);
+	CloseHandle(data->waitingTimeThread);
+	CloseHandle(data->processCommandThread);
+	CloseHandle(data->namedPipeReaderThread);
 }
 
-void readerThread(HANDLE hPipe) {
+int processMessageFromController(PassengerProtocol message) {
+	switch (message.type) {
+		case ArrivePassenger: {
+			_tprintf(L"Chegaste ao teu destino.\n");
+			return 0;
+		}
+		case DeparturePassenger: {
+			_tprintf(L"O teu avião iniciou viagem!\n");
+			return 1;
+		}
+		case FoundPlane: {
+			_tprintf(L"Embarcaste!\n");
+			return 1;
+		}
+		case RegisterPassenger: {
+			if(message.success) {
+				_tprintf(L"Registado com sucesso!\n");
+			}
+			else {
+				_ftprintf(stderr, L"Erro ao registar.\n");
+				return 0;
+			}
+			return 1;
+		}
+		case UpdatePositionPassenger: {
+			_tprintf(L"Estás na posição: [%3d, %3d]!\n", message.coordinates.x, message.coordinates.y);
+			return 1;
+		}
+	}
+	return 1;
+}
 
-	if (hPipe == NULL) {
+void readerThread(pData data) {
+	if (data->hPipe == NULL) {
 		_ftprintf(stderr, L"O Handle recebido na thread do reader está a NULL\n");
 		return;
 	}
 
-	HANDLE readReadyEvent = CreateEvent(
+	data->readReadyEvent = CreateEvent(
 		NULL,
 		TRUE,
 		FALSE,
 		NULL);
 
-	if (readReadyEvent == NULL) {
+	if (data->readReadyEvent == NULL) {
 		_ftprintf(stderr, L"A criação do evento na thread do reader deu erroL\n");
 		return;
 	}
@@ -34,24 +68,24 @@ void readerThread(HANDLE hPipe) {
 	OVERLAPPED overlappedReadReady = { 0 };
 	while(1) {
 		ZeroMemory(&overlappedReadReady, sizeof(overlappedReadReady));
-		ResetEvent(readReadyEvent);
-		overlappedReadReady.hEvent = readReadyEvent;
+		ResetEvent(data->readReadyEvent);
+		overlappedReadReady.hEvent = data->readReadyEvent;
 
 		DWORD numberBytesRead;
 		PassengerProtocol messageRead;
 
-		ReadFile(
-			hPipe,
+		ReadFile( // Este warning é a cena mais parva que eu já vi na vida.
+			data->hPipe,
 			&messageRead,
 			sizeof(PassengerProtocol),
 			&numberBytesRead,
 			&overlappedReadReady);
 
-		WaitForSingleObject(readReadyEvent, INFINITE);
-		_tprintf(L"[DEBUG] Mensagem lida.\n");
+		WaitForSingleObject(data->readReadyEvent, INFINITE);
+		// _tprintf(L"[DEBUG] Mensagem lida.\n");
 
 		GetOverlappedResult(
-			hPipe,
+			data->hPipe,
 			&overlappedReadReady,
 			&numberBytesRead,
 			FALSE);
@@ -61,7 +95,9 @@ void readerThread(HANDLE hPipe) {
 			continue;
 		}
 		
-		processMessageFromController(messageRead);
+		if (!processMessageFromController(messageRead)) {
+			return;
+		}
 	}
 }
 
@@ -85,9 +121,7 @@ int connectToController(pData data) {
 			return -1;
 		}
 
-		// Caso as instâncias todas estejam ocupadas (são 255)
-
-		if(!WaitNamedPipe(PIPENAME, 60000)) {
+		if(!WaitNamedPipe(PIPENAME, 60000)) { // Caso as instâncias todas estejam ocupadas (são 255)
 			_ftprintf(stderr, L"Esperei 60 segundos, vou à minha vida\n");
 			return -1;
 		}
@@ -110,7 +144,7 @@ int connectToController(pData data) {
 		NULL,
 		0,
 		(LPTHREAD_START_ROUTINE)readerThread,
-		(LPVOID)data->hPipe,
+		(LPVOID)data,
 		0,
 		NULL);
 
@@ -119,11 +153,11 @@ int connectToController(pData data) {
 		return -1;
 	}
 
-	_tprintf(L"[DEBUG] Connected.\n");
+	// _tprintf(L"[DEBUG] Connected.\n");
 	return 1;
 }
 
-int processCommand() {
+void processCommand() {
 	TCHAR command[SIZE];
 	
 	do {
@@ -157,7 +191,6 @@ int getArguments(int argc, LPTSTR argv[], pData data) {
 	_tcscpy_s(data->passenger->name, NAMESIZE, argv[3]);
 	_tcscpy_s(data->passenger->origin, NAMESIZE, argv[1]);
 	_tcscpy_s(data->passenger->destiny, NAMESIZE, argv[2]);
-
 
 	if (argc == 5) {
 		TCHAR* endptr;
@@ -207,8 +240,9 @@ int writeOnPipe(HANDLE pipe, PassengerProtocol message) {
 		&overlappedWriteReady);
 
 	WaitForSingleObject(writeReadyEvent, INFINITE);
-	_tprintf(L"[DEBUG] Mensagem Enviada.\n");
-	return 1;
+	// _tprintf(L"[DEBUG] Mensagem Enviada.\n");
+	CloseHandle(writeReadyEvent);
+	return 1;	
 }
 
 int registerOnController(pData data) {
@@ -218,8 +252,6 @@ int registerOnController(pData data) {
 
 	return writeOnPipe(data->hPipe, registerMessage);
 }
-
-
 
 int _tmain(int argc, LPTSTR argv[]) {
 
@@ -231,6 +263,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 	
 	Data data;
 	Passenger passenger;
+	passenger.id = _getpid();
 	data.passenger = &passenger;
 
 	if (!getArguments(argc, argv, &data)) {
@@ -247,8 +280,6 @@ int _tmain(int argc, LPTSTR argv[]) {
 		return 1;
 	}
 
-
-
 	data.waitingTimeTimer = CreateWaitableTimer(NULL, TRUE, NULL);
 
 	if(data.waitingTime != -1) {
@@ -263,13 +294,19 @@ int _tmain(int argc, LPTSTR argv[]) {
 	
 	initCommandProcessThread(&data);
 	
-	HANDLE handleArray[2];
+	HANDLE handleArray[3];
 	handleArray[0] = data.waitingTimeTimer;
 	handleArray[1] = data.processCommandThread;
+	handleArray[2] = data.namedPipeReaderThread;
 
-	WaitForMultipleObjects(2, handleArray, FALSE, INFINITE);
-	_tprintf(_T("Cansei!"));
-	
+	WaitForMultipleObjects(3, handleArray, FALSE, INFINITE);
+
+	if(handleArray[0] != NULL) {
+		CloseHandle(handleArray[0]);
+	}
+	CloseHandle(handleArray[1]);
+	CloseHandle(handleArray[2]);
+	closeHandlers(&data);
 	return 0;
 }
 

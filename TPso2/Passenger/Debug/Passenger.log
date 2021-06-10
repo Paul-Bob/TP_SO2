@@ -1,3 +1,0 @@
-﻿  passenger.c
-C:\Users\pauli\Desktop\Trabalho\TPso2\Passenger\passenger.c(140): warning C4715: 'processCommand': not all control paths return a value
-  Passenger.vcxproj -> C:\Users\pauli\Desktop\Trabalho\TPso2\Debug\Passenger.exe
