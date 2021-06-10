@@ -75,6 +75,7 @@ struct dados {
 	pPlane planes;
 	int maxAirports  , nrAirports;
 	int maxAirplanes , nrAirplanes;
+	HWND hwndList;
 };
 
 typedef struct passageiro Passenger, * pPassenger;

@@ -3,6 +3,7 @@
 #include <tchar.h>
 #include "resource.h"
 #include "controller.h"
+#include "Winuser.h"
 
 #include "../HF/structs.h"
 #include "prepareEnv.h"
@@ -198,7 +199,7 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 LRESULT CALLBACK TrataEventosTerminal(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
 {
 	HWND hwndList;
-	TCHAR welcome[300] = _T("Comando 'help' a qualquer momento para rever informações dos comandos.");
+	TCHAR welcome[300] = _T("Comando 'help' \na qualquer momento para rever informações dos comandos.");
 	TCHAR comando[300];
 	TCHAR retorno[10][500];
 	// quando uma dialogbox é inicializava, ela recebe um evento chamado de WM_INITDIALOG
@@ -209,6 +210,8 @@ LRESULT CALLBACK TrataEventosTerminal(HWND hWnd, UINT messg, WPARAM wParam, LPAR
 	case WM_INITDIALOG:
 
 		hwndList = GetDlgItem(hWnd, IDC_CONSOLA);
+		data->hwndList = hwndList;
+
 		SendMessage(hwndList, LB_ADDSTRING, 0, welcome);
 		interpretaComandoControladorGUI(_T("help"), data, hwndList);
 
@@ -223,6 +226,8 @@ LRESULT CALLBACK TrataEventosTerminal(HWND hWnd, UINT messg, WPARAM wParam, LPAR
 			GetDlgItemText(hWnd, IDC_COMANDO, comando, 300);
 			SetDlgItemTextA(hWnd, IDC_COMANDO, _T(""));
 			interpretaComandoControladorGUI(comando, data, hwndList);
+
+			SendMessage(hwndList, WM_VSCROLL, SB_BOTTOM, NULL); //só demorei 30m a procura desta linha ! adoro win API!
 		}
 
 		break;

@@ -15,27 +15,59 @@
 
 
 
-void printConsumedInfo(Protocol message, pPlane plane) {
-	switch (message.type) {
-	case Arrive:
-		_tprintf(L"O avião %d aterrou com sucesso no aeroporto '%s'\n\n", message.planeID, plane->actualAirport); 
-		_tprintf(L"-> ");
-		break;
-	case Departure:
-		_tprintf(L"O avião %d descolou com sucesso do aeroporto '%s' e tem como destino o aeroporto '%s'\n\n",
-			message.planeID, plane->departureAirport, plane->destinAirport);
-		_tprintf(L"-> ");
-		break;
-	case Register:
-		_tprintf(_T("\n\nNovo registo de avião!\n"));
-		_tprintf(_T("Avião ID   : %d\n"), message.planeID);
-		_tprintf(_T("Aeroporto  : %s\n"), plane->actualAirport);
-		_tprintf(_T("Velocidade : %d\n"), plane->velocity);
-		_tprintf(_T("Capacidade : %d\n\n"), plane->maxCapacity);
-		_tprintf(L"-> ");
-		break;
-	}
+void printConsumedInfo(Protocol message, pPlane plane, HWND hwndList) {
+	TCHAR myMessage[500] = _T("");
+	if(hwndList == NULL)
+		switch (message.type) {
+		case Arrive:
+			_tprintf(L"O avião %d aterrou com sucesso no aeroporto '%s'\n\n", message.planeID, plane->actualAirport); 
+			_tprintf(L"-> ");
+			break;
+		case Departure:
+			_tprintf(L"O avião %d descolou com sucesso do aeroporto '%s' e tem como destino o aeroporto '%s'\n\n",
+				message.planeID, plane->departureAirport, plane->destinAirport);
+			_tprintf(L"-> ");
+			break;
+		case Register:
+			_tprintf(_T("\n\nNovo registo de avião!\n"));
+			_tprintf(_T("Avião ID   : %d\n"), message.planeID);
+			_tprintf(_T("Aeroporto  : %s\n"), plane->actualAirport);
+			_tprintf(_T("Velocidade : %d\n"), plane->velocity);
+			_tprintf(_T("Capacidade : %d\n\n"), plane->maxCapacity);
+			_tprintf(L"-> ");
+			break;
+		}
+	else
+		switch (message.type) {
+		case Arrive:
+			SendMessage(hwndList, LB_ADDSTRING, 0, _T(""));
+			_stprintf_s(myMessage, 500, _TEXT("O avião %d aterrou com sucesso no aeroporto '%s'"), message.planeID, plane->actualAirport);
+			SendMessage(hwndList, LB_ADDSTRING, 0, myMessage);
+			break;
+		case Departure:
+			SendMessage(hwndList, LB_ADDSTRING, 0, _T(""));
+
+			_stprintf_s(myMessage, 500, _TEXT("O avião %d descolou com sucesso do aeroporto '%s' e tem como destino o aeroporto '%s'"),
+				message.planeID, plane->departureAirport, plane->destinAirport);
+			SendMessage(hwndList, LB_ADDSTRING, 0, myMessage);
+			break;
+		case Register:
+			SendMessage(hwndList, LB_ADDSTRING, 0, _T(""));
+
+			SendMessage(hwndList, LB_ADDSTRING, 0, _T("Novo registo de avião!"));
+			_stprintf_s(myMessage, 500, _T("Avião ID   : %d\n"), message.planeID);
+			SendMessage(hwndList, LB_ADDSTRING, 0, myMessage);
+			_stprintf_s(myMessage, 500, _T("Aeroporto  : %s\n"), plane->actualAirport);
+			SendMessage(hwndList, LB_ADDSTRING, 0, myMessage);
+			_stprintf_s(myMessage, 500, _T("Velocidade : %d\n"), plane->velocity);
+			SendMessage(hwndList, LB_ADDSTRING, 0, myMessage);
+			_stprintf_s(myMessage, 500, _T("Capacidade : %d\n\n"), plane->maxCapacity);
+			SendMessage(hwndList, LB_ADDSTRING, 0, myMessage);
+			break;
+		}
+
 }
+
 
 void removePlane(pRemovePlane removeData) {
 	//_tprintf(L"[DEBUG] Remove\n");
@@ -93,7 +125,7 @@ void producerConsumer(pDATA data) {
 		planePos = message.index;
 
 		if (message.type == Arrive || message.type == Departure || message.type == Register) {
-			printConsumedInfo(message,&data->planes[planePos]);
+			printConsumedInfo(message,&data->planes[planePos],data->hwndList);
 		}
 		else {
 			//_tprintf(L"[DEBUG] Heartbeat %d \n, ", message.planeID);

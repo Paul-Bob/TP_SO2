@@ -1,9 +1,1 @@
-﻿  GUI.c
-C:\Users\pauli\Desktop\Trabalho\TPso2\Controller\GUI.c(147,46): warning C4047: '=': 'pDATA' differs in levels of indirection from 'LONG'
-C:\Users\pauli\Desktop\Trabalho\TPso2\Controller\GUI.c(143,8): warning C4101: 'str1': unreferenced local variable
-C:\Users\pauli\Desktop\Trabalho\TPso2\Controller\GUI.c(143,19): warning C4101: 'str2': unreferenced local variable
-C:\Users\pauli\Desktop\Trabalho\TPso2\Controller\GUI.c(212,49): warning C4047: 'function': 'LPARAM' differs in levels of indirection from 'TCHAR [300]'
-C:\Users\pauli\Desktop\Trabalho\TPso2\Controller\GUI.c(212,42): warning C4024: 'SendMessageW': different types for formal and actual parameter 4
-C:\Users\pauli\Desktop\Trabalho\TPso2\Controller\GUI.c(224,45): warning C4133: 'function': incompatible types - from 'unsigned short [1]' to 'LPCSTR'
-C:\Users\pauli\Desktop\Trabalho\TPso2\Controller\GUI.c(203,8): warning C4101: 'retorno': unreferenced local variable
-  Controller.vcxproj -> C:\Users\pauli\Desktop\Trabalho\TPso2\Debug\Controller.exe
+﻿  Controller.vcxproj -> C:\Users\pauli\Desktop\Trabalho\TPso2\Debug\Controller.exe

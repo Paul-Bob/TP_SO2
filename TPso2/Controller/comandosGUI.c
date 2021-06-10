@@ -20,14 +20,14 @@ void interpretaComandoControladorGUI(TCHAR* command, pDATA data, HWND hwndList) 
 	if (action == NULL)
 		return;
 
-	if (!_tcscmp(action, TEXT("exit"))) {
+	if (!_tcscmp(action, _TEXT("exit"))) {
 		for (int i = 0; i < data->maxAirplanes; i++)
 			data->planes[i].velocity = -500;
 		SendMessage(hwndList, LB_ADDSTRING, 0, TEXT("see ya\n"));
 	}
 	else if (!_tcscmp(action, TEXT("help"))) {
 		if (argument == 0 || _tcslen(argument)) {
-			_stprintf_s(message, 500, TEXT("%s: extra operand '%s'"), action, argument);
+			_stprintf_s(message, 500, _TEXT("%s: extra operand '%s'"), action, argument);
 			SendMessage(hwndList, LB_ADDSTRING, 0, message);
 			return;
 		}

@@ -9,7 +9,7 @@ struct pipeEDados {
 	pDATA data;
 };
 
-void printConsumedInfo(Protocol message, pPlane plane);
+void printConsumedInfo(Protocol message, pPlane plane, HWND gui);
 void removePlane(pRemovePlane removeData);
 void initPlaneTimerThread(pRemovePlane removePlaneData);
 void producerConsumer(pDATA data);
