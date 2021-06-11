@@ -34,6 +34,8 @@ void interpretaComandoControladorGUI(TCHAR* command, pDATA data, HWND hwndList) 
 		SendMessage(hwndList, LB_ADDSTRING, 0, TEXT("Comandos disponiveis:\n"));
 		SendMessage(hwndList, LB_ADDSTRING, 0, TEXT("- criar [nome] [x] [y] --> Criar novos aeroportos\n"));
 		SendMessage(hwndList, LB_ADDSTRING, 0, TEXT("- listar               --> Lista aeroportos, aviões e passageiros\n"));
+		SendMessage(hwndList, LB_ADDSTRING, 0, TEXT("- suspender            --> Suspende o registo de novos aviões\n"));
+		SendMessage(hwndList, LB_ADDSTRING, 0, TEXT("- ativar               --> Ativa o registo de novos aviões\n"));
 		SendMessage(hwndList, LB_ADDSTRING, 0, TEXT("- exit                 --> Encerra o sistema\n"));
 		
 		//Dúvida: igual para suspender/ativar, é suposto entrar num menu ou como fizemos em SO que era sAviaoXpTO aAviaoXpTO sendo o s para suspender e a para ativar?
@@ -180,6 +182,18 @@ void interpretaComandoControladorGUI(TCHAR* command, pDATA data, HWND hwndList) 
 			}
 		}
 	}
+	else if (!_tcscmp(action, TEXT("suspender"))) {
+	planeRegisterSuspended(data, TRUE);
+	_stprintf_s(message, 500, TEXT("O registo de aviões foi suspenso\n"));
+	SendMessage(hwndList, LB_ADDSTRING, 0, message);
+	
+		}
+	else if (!_tcscmp(action, TEXT("ativar"))) {
+	planeRegisterSuspended(data, FALSE);
+	_stprintf_s(message, 500, TEXT("O registo de aviões foi reativado\n"));
+	SendMessage(hwndList, LB_ADDSTRING, 0, message);
+	}
+
 	else {
 		_stprintf_s(message, 500, TEXT("Comando '%s' inexistente\n"), action);
 		SendMessage(hwndList, LB_ADDSTRING, 0, message);

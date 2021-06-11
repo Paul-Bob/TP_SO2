@@ -32,6 +32,8 @@ void interpretaComandoControlador(TCHAR* command, pDATA data) {
 		_tprintf(TEXT("Comandos disponiveis:\n"));
 		_tprintf(TEXT("- criar [nome] [x] [y] --> Criar novos aeroportos\n"));
 		_tprintf(TEXT("- listar               --> Lista aeroportos, aviões e passageiros\n"));
+		_tprintf(TEXT("- suspender            --> Suspende registo de novos aviões\n"));
+		_tprintf(TEXT("- ativar               --> Ativa registo de novos aviões\n"));
 		_tprintf(TEXT("- exit                 --> Encerra o sistema\n"));
 		//Dúvida: igual para suspender/ativar, é suposto entrar num menu ou como fizemos em SO que era sAviaoXpTO aAviaoXpTO sendo o s para suspender e a para ativar?
 	}
@@ -180,6 +182,14 @@ void interpretaComandoControlador(TCHAR* command, pDATA data) {
 				_tprintf(TEXT("Aeroporto '%s' foi adicionado com sucesso nas coordenadas [%d,%d]\n"), new.name, new.coordinates[X], new.coordinates[Y]);
 			}
 		}
+	}
+	else if (!_tcscmp(action, TEXT("suspender"))) {
+		planeRegisterSuspended(data, TRUE);
+		_tprintf(TEXT("O registo de aviões foi suspenso.\n"));
+	}
+	else if (!_tcscmp(action, TEXT("ativar"))) {
+	planeRegisterSuspended(data, FALSE);
+	_tprintf(TEXT("O registo de aviões foi retomado.\n"));
 	}
 	else
 		_tprintf(TEXT("Comando '%s' inexistente\n"),action);

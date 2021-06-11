@@ -80,6 +80,7 @@ struct dados {
 	HANDLE producerConsumerThread;
 	HANDLE itemsSemaphore;
 	HANDLE emptiesSemaphore;
+	HANDLE controlPlanesMutex;
 	HANDLE controlPlanes;
 	HANDLE controlPassengerRegisterThread;
 	pProducerConsumer producerConsumer;

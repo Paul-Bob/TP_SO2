@@ -11,7 +11,7 @@ struct Dados {
 	HANDLE tripThread;
 	HANDLE heartbeatThread;
 	CRITICAL_SECTION criticalSection;
-	HANDLE controlSemaphore;
+	HANDLE controlSemaphore[2];
 	HANDLE producerMutex;
 	HANDLE emptiesSemaphore;
 	HANDLE itemsSemaphore;

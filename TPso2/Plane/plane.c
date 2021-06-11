@@ -482,9 +482,10 @@ int _tmain(int argc, LPTSTR argv[]) {
 	}
 
 	Data data;
-	data.controlSemaphore = OpenSemaphore(SEMAPHORE_MODIFY_STATE | SYNCHRONIZE, FALSE, _T("planeEntryControl"));
+	data.controlSemaphore[0] = OpenSemaphore(SEMAPHORE_MODIFY_STATE | SYNCHRONIZE, FALSE, _T("planeEntryControl"));
+	data.controlSemaphore[1] = OpenMutex(SYNCHRONIZE, FALSE, _T("planeEntryControlMutex"));
 
-	if (data.controlSemaphore == NULL) {
+	if (data.controlSemaphore[0] == NULL || data.controlSemaphore[1] == NULL) {
 		_ftprintf(stderr, _T("Impossível abrir semáforo."));
 		closePlane(&data);
 		return 1;
@@ -492,7 +493,9 @@ int _tmain(int argc, LPTSTR argv[]) {
 
 	_tprintf(L"Pedido de registo à torre de controlo...\n");
 
-	WaitForSingleObject(data.controlSemaphore, INFINITE);
+	// WaitForSingleObject(data.controlSemaphore, INFINITE);
+	WaitForMultipleObjects(2, data.controlSemaphore, TRUE, INFINITE);
+	ReleaseMutex(data.controlSemaphore[1]);
 
 	if (!registerPlaneInController(&data)) {
 		_tprintf(TEXT("Problemas a registar o avião no controlador.\n"));

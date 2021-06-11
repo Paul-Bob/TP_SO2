@@ -440,6 +440,15 @@ void passengerRegister(pDATA data) {
 	}
 }
 
+void planeRegisterSuspended(pDATA data, BOOL suspended) {
+	if (suspended) {
+		WaitForSingleObject(data->controlPlanesMutex, INFINITE);
+	}
+	else {
+		ReleaseMutex(data->controlPlanesMutex);
+	}
+}
+
 void initControlPassengerRegisterThread(pDATA data) {
 	// _tprintf(L"[DEBUG] Vou criar a thread do registo\n");
 

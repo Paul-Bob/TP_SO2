@@ -84,6 +84,7 @@ int createAirplaneSpace(pDATA data) {
 		data->planes[i].heartbeatTimer = NULL;
 	}
 	data->planesMutex = CreateMutex(0, FALSE, _T("planesMutex"));
+	data->controlPlanesMutex = CreateMutex(0, FALSE, _T("planeEntryControlMutex"));
 	data->controlPlanes = CreateSemaphore(NULL, data->maxAirplanes, data->maxAirplanes, _T("planeEntryControl"));
 
 	return 1;
