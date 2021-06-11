@@ -91,6 +91,7 @@ struct dados {
 	int maxAirports  , nrAirports;
 	int maxAirplanes , nrAirplanes;
 	int nrPassengers;
+
 	HWND hwndList;
 };
 

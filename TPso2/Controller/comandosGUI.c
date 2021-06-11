@@ -173,7 +173,7 @@ void interpretaComandoControladorGUI(TCHAR* command, pDATA data, HWND hwndList) 
 					return;
 				}
 
-			if (verifyPositionsGUI(data, new.coordinates[X], new.coordinates[Y], 10, hwndList)) {
+			if (verifyPositionsGUI(data, new.coordinates[X], new.coordinates[Y], 80, hwndList)) {
 				data->map->matrix[new.coordinates[X]][new.coordinates[Y]] = 2;
 				data->airports[data->nrAirports] = new;
 				data->nrAirports++;
@@ -246,7 +246,7 @@ int verifyPositionsGUI(pDATA data, int x, int y, int positions, HWND hwndList) {
 			if (coluna == x && y == linha)
 				continue;
 			else if (data->map->matrix[coluna][linha] == 2) {
-				_stprintf_s(message, 500, TEXT("Aeroporto [%d,%d] está num raio de 10 posições..."), coluna, linha);
+				_stprintf_s(message, 500, TEXT("Aeroporto [%d,%d] está num raio de %d posições..."), coluna, linha, positions);
 				SendMessage(hwndList, LB_ADDSTRING, 0, message);
 				return 0;
 			}
