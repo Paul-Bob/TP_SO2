@@ -211,7 +211,7 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 	HDC hdc;
 	RECT rect;
 	PAINTSTRUCT ps;
-	int x, y, primeiraVez = 1;
+	int x, y, primeiraVezAviao = 1, primeiraVezPassageiro = 1;
 
 	//data = GetWindowLongPtr(hWnd, GWLP_USERDATA);
 
@@ -261,11 +261,12 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 			if (x >= airplaneX && y >= airplaneY && x <= (airplaneX + bmp.bmWidth) && y <= (airplaneY + bmp.bmHeight)) {
 				_stprintf_s(nomeAeroporto,500, _T("Aeroporto '%s'\n"), data->airports[i].name);
 				_stprintf_s(infoAeroporto,500, _T("Coordenadas [%d,%d]\n"), data->airports[i].coordinates[0], data->airports[i].coordinates[1]);
-				for(int j = 0; j < getNumberOfAirplanes(data); j++)
-					if(!_tcscmp(data->planes[j].actualAirport, data->airports[i].name)){
-						if (primeiraVez) {
+				for (int j = 0; j < getNumberOfAirplanes(data); j++) {
+					if (!_tcscmp(data->planes[j].actualAirport, data->airports[i].name)) {
+						if (primeiraVezAviao) {
+							_stprintf_s(infoAeroporto, 500, _T("%s\n--------------------------------------------------\n"), infoAeroporto);
 							_stprintf_s(infoAeroporto, 500, _T("%s\nAviões neste aeroporto:\n"), infoAeroporto);
-							primeiraVez--;
+							primeiraVezAviao--;
 						}
 						_stprintf_s(infoAeroporto, 500, _T("%sID '%d'"), infoAeroporto, data->planes[j].planeID);
 						if (_tcscmp(data->planes[j].destinAirport, _T("NULL")))
@@ -273,9 +274,31 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 						else
 							_stprintf_s(infoAeroporto, 500, _T("%s\n"), infoAeroporto);
 						_stprintf_s(infoAeroporto, 500, _T("%sCapacidade: %3d\n"), infoAeroporto, data->planes[j].maxCapacity);
-						_stprintf_s(infoAeroporto, 500, _T("%sVelocidade: %3d\n"), infoAeroporto, data->planes[j].velocity);
-						_stprintf_s(infoAeroporto, 500, _T("%s--------------------------------------------------\n"),infoAeroporto);
+						_stprintf_s(infoAeroporto, 500, _T("%sVelocidade : %3d\n"), infoAeroporto, data->planes[j].velocity);
+						for (int k = 0; k < data->nrPassengers; k++)
+							if (data->passengers[k].planeID == data->planes[j].planeID) {
+								if (primeiraVezPassageiro) {
+									_stprintf_s(infoAeroporto, 500, _T("%s\nPassageiros neste avião:\n"), infoAeroporto);
+									primeiraVezPassageiro--;
+								}
+								_stprintf_s(infoAeroporto, 500, TEXT("%s    - %s\n"), infoAeroporto, data->passengers[k].name);
+							}
+
 					}
+					_stprintf_s(infoAeroporto, 500, TEXT("%s\n"), infoAeroporto);
+					primeiraVezPassageiro = 1;
+				}
+				
+				for (int k = 0; k < data->nrPassengers; k++)
+					if (data->passengers[k].planeID == -1 && !_tcscmp(data->passengers[k].origin, data->airports[i].name)) {
+						if (primeiraVezPassageiro) {
+							_stprintf_s(infoAeroporto, 500, _T("%s--------------------------------------------------\n"), infoAeroporto);
+							_stprintf_s(infoAeroporto, 500, _T("%s\nPassageiros sem avião neste aeroporto:\n"), infoAeroporto);
+							primeiraVezPassageiro--;
+						}
+						_stprintf_s(infoAeroporto, 500, TEXT("%s    - %s com destino à '%s'\n"), infoAeroporto, data->passengers[k].name, data->passengers[k].destiny);
+					}
+
 				MessageBox(hWnd, infoAeroporto, nomeAeroporto, 0);
 
 			}

@@ -43,6 +43,7 @@ void printConsumedInfo(Protocol message, pPlane plane, HWND hwndList) {
 			SendMessage(hwndList, LB_ADDSTRING, 0, _T(""));
 			_stprintf_s(myMessage, 500, _TEXT("O avião %d aterrou com sucesso no aeroporto '%s'"), message.planeID, plane->actualAirport);
 			SendMessage(hwndList, LB_ADDSTRING, 0, myMessage);
+			SendMessage(hwndList, WM_VSCROLL, SB_BOTTOM, NULL);
 			break;
 		case Departure:
 			SendMessage(hwndList, LB_ADDSTRING, 0, _T(""));
@@ -50,6 +51,7 @@ void printConsumedInfo(Protocol message, pPlane plane, HWND hwndList) {
 			_stprintf_s(myMessage, 500, _TEXT("O avião %d descolou com sucesso do aeroporto '%s' e tem como destino o aeroporto '%s'"),
 				message.planeID, plane->departureAirport, plane->destinAirport);
 			SendMessage(hwndList, LB_ADDSTRING, 0, myMessage);
+			SendMessage(hwndList, WM_VSCROLL, SB_BOTTOM, NULL);
 			break;
 		case Register:
 			SendMessage(hwndList, LB_ADDSTRING, 0, _T(""));
@@ -63,6 +65,7 @@ void printConsumedInfo(Protocol message, pPlane plane, HWND hwndList) {
 			SendMessage(hwndList, LB_ADDSTRING, 0, myMessage);
 			_stprintf_s(myMessage, 500, _T("Capacidade : %d\n\n"), plane->maxCapacity);
 			SendMessage(hwndList, LB_ADDSTRING, 0, myMessage);
+			SendMessage(hwndList, WM_VSCROLL, SB_BOTTOM, NULL);
 			break;
 		}
 
