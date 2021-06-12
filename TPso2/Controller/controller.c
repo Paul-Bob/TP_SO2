@@ -169,6 +169,7 @@ pPlane getPlane(pDATA data, int planeID) {
 }
 
 void sendMessageToPassengersOfPlane(pDATA data, int planeID, enum messagePassengerType type) {
+	InvalidateRect(data->hWndGlobal, NULL, FALSE);
 	PassengerProtocol message;
 	message.type = type;
 	pPlane plane = getPlane(data, planeID);

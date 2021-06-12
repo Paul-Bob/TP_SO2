@@ -24,6 +24,7 @@ typedef struct Aviao Plane, * pPlane;
 
 struct Aviao {
 	int maxCapacity, velocity, planeID, index;
+	int orientation; //1N 2S 3E 4O 5NE 6NO 7SE 8SO
 	TCHAR actualAirport[NAMESIZE];
 	TCHAR destinAirport[NAMESIZE];
 	TCHAR departureAirport[NAMESIZE];
@@ -91,7 +92,7 @@ struct dados {
 	int maxAirports  , nrAirports;
 	int maxAirplanes , nrAirplanes;
 	int nrPassengers;
-
+	HWND hWndGlobal;
 	HWND hwndList;
 };
 

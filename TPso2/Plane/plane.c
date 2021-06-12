@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "plane.h"
+#define MAX_CHANGES 5
 
 void notifyController(pData data, enum messageType type) {
 	WaitForSingleObject(data->emptiesSemaphore, INFINITE);
@@ -102,6 +103,10 @@ int setInitialAirport(TCHAR* name, pData data) {
 }
 
 int setDestinationAirport(TCHAR* destination, pData data) {
+	if (!_tcscmp(destination, data->plane->actualAirport)) {
+		_tprintf(_T("Já se encontra nesse aeroporto to zé!"));
+		return 0;
+	}
 	data->plane->final.x = -1;
 	HANDLE objAirports = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, _T("airports"));
 
@@ -131,13 +136,13 @@ int setDestinationAirport(TCHAR* destination, pData data) {
 
 	for (int i = 0; i < maxAirports; i++) {
 		if (!_tcscmp(destination, airports[i].name)) { //TODO: mensagem de erro
-			if(data->plane->current.x != airports[i].coordinates[X] && data->plane->current.y != airports[i].coordinates[Y]) {
+			//if(data->plane->current.x != airports[i].coordinates[X] && data->plane->current.y != airports[i].coordinates[Y]) {
 				data->plane->final.x = airports[i].coordinates[X];
 				data->plane->final.y = airports[i].coordinates[Y];
 				_tcscpy_s(data->plane->destinAirport, NAMESIZE, destination);
 				_tprintf(TEXT("Aeroporto destino alterado para '%s'\n\n"),destination);
 				break;
-			}
+			//}
 		}
 	}
 	ReleaseMutex(mutex);
@@ -256,12 +261,104 @@ void initTrip(pData data) {
 
 	notifyController(data, Departure);
 
+	int lastChanges[MAX_CHANGES], changes = 0;
+
 	do {
 		 Sleep(1000 / (DWORD)data->plane->velocity);
-
+		 //data->plane->orientation = 0;
 		int nextX = 0, nextY = 0;
 		int result = move(data->plane->current.x, data->plane->current.y, data->plane->final.x, data->plane->final.y, &nextX, &nextY);
+		int i = 0;
+		//1N 2S 3E 4O 5NE 6NO 7SE 8SO
+		if (data->plane->current.y > nextY && data->plane->current.x == nextX)
+		{
+			if (changes < MAX_CHANGES)
+				lastChanges[changes++] = 1;
+			else
+			{
+				for (i = 0; i < MAX_CHANGES; i++)
+					if (lastChanges[i] != 1)
+						break;
+				changes = 0;
+			}
+			if (i == MAX_CHANGES)
+				data->plane->orientation = 1;
+		}
+		//norte-este
+		else if (data->plane->current.y > nextY && data->plane->current.x < nextX)
+		{
+			if (changes < MAX_CHANGES)
+				lastChanges[changes++] = 5;
+			data->plane->orientation = 5;
+		}
+		//norte-oeste
+		else if (data->plane->current.y > nextY && data->plane->current.x > nextX)
+		{
+			if (changes < MAX_CHANGES)
+				lastChanges[changes++] = 7;
+			data->plane->orientation = 6;
+		}
+		//sul
+		else if (data->plane->current.y < nextY && data->plane->current.x == nextX)
+		{
+			if (changes < MAX_CHANGES)
+				lastChanges[changes++] = 2;
+			else
+			{
+				for (i = 0; i < MAX_CHANGES; i++)
+					if (lastChanges[i] != 2)
+						break;
+				changes = 0;
+			}
+			if (i == MAX_CHANGES) 
+				data->plane->orientation = 2;
+		}
+		//sul-este
+		else if (data->plane->current.y < nextY && data->plane->current.x < nextX) {
+			if (changes < MAX_CHANGES)
+				lastChanges[changes++] = 7;
+			data->plane->orientation = 7;
+		}
 
+		//sul-oeste
+		else if (data->plane->current.y < nextY && data->plane->current.x > nextX) {
+			if (changes < MAX_CHANGES)
+				lastChanges[changes++] = 8;
+			data->plane->orientation = 8;
+		}
+		//este
+		else if (data->plane->current.x < nextX && data->plane->current.y == nextY) {
+			if (changes < MAX_CHANGES)
+				lastChanges[changes++] = 3;
+			else
+			{
+				for (i = 0; i < MAX_CHANGES; i++)
+					if (lastChanges[i] != 3)
+						break;
+				changes = 0;
+			}
+			if (i == MAX_CHANGES)
+				data->plane->orientation = 3;
+		}
+
+		//oeste
+		else if (data->plane->current.x > nextX && data->plane->current.y == nextY)
+		{
+			if (changes < MAX_CHANGES)
+				lastChanges[changes++] = 4;
+			else
+			{
+				for (i = 0; i < MAX_CHANGES; i++)
+					if (lastChanges[i] != 4)
+						break;
+				changes = 0;
+			}
+			if (i == MAX_CHANGES)
+				data->plane->orientation = 4;
+		}
+			
+
+		//_tprintf(_T("%d"), data->plane->orientation );
 		if (result == 2) {
 			continue;
 		}

@@ -17,14 +17,13 @@ LRESULT CALLBACK TrataEventosTerminal(HWND, UINT, WPARAM, LPARAM);
 TCHAR szProgName[] = TEXT("Ficha8");
 pDATA data;
 
-HBITMAP hBmp;
-HDC bmpDC;
-BITMAP bmp;
+HBITMAP hBmp, hBmpPN, hBmpPS, hBmpPE, hBmpPO, hBmpPNE, hBmpPNO, hBmpPSE, hBmpPSO;
+HDC bmpDC, bmpDCPN, bmpDCPS, bmpDCPE, bmpDCPO, bmpDCPNE, bmpDCPNO, bmpDCPSE, bmpDCPSO;
+BITMAP bmp, bmpPN, bmpPS, bmpPE, bmpPO, bmpPNE, bmpPNO, bmpPSE, bmpPSO;
 int xBitmap;
 int yBitmap;
 
 int limDir;
-HWND hWndGlobal;
 HWND hMutex;
 
 HDC memDC = NULL;
@@ -54,7 +53,7 @@ HBITMAP hBitmapDB;
 //
 //		ReleaseMutex(hMutex);
 //
-//		InvalidateRect(hWndGlobal, NULL, FALSE);
+//		InvalidateRect(data->hWndGlobal, NULL, FALSE);
 //		Sleep(1);
 //	}
 //}
@@ -156,11 +155,43 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 	RECT rect;
 
 	hBmp = (HBITMAP)LoadImage(NULL, _T("control.bmp"), IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+	hBmpPN = (HBITMAP)LoadImage(NULL, _T("planeN.bmp"), IMAGE_BITMAP, 20, 20, LR_LOADFROMFILE);
+	hBmpPS = (HBITMAP)LoadImage(NULL, _T("planeS.bmp"), IMAGE_BITMAP, 20, 20, LR_LOADFROMFILE);
+	hBmpPE = (HBITMAP)LoadImage(NULL, _T("planeE.bmp"), IMAGE_BITMAP, 20, 20, LR_LOADFROMFILE);
+	hBmpPO = (HBITMAP)LoadImage(NULL, _T("planeW.bmp"), IMAGE_BITMAP, 20, 20, LR_LOADFROMFILE);
+	hBmpPNE = (HBITMAP)LoadImage(NULL, _T("planeNE.bmp"), IMAGE_BITMAP, 20, 20, LR_LOADFROMFILE);
+	hBmpPNO = (HBITMAP)LoadImage(NULL, _T("planeNW.bmp"), IMAGE_BITMAP, 20, 20, LR_LOADFROMFILE);
+	hBmpPSE = (HBITMAP)LoadImage(NULL, _T("planeSE.bmp"), IMAGE_BITMAP, 20, 20, LR_LOADFROMFILE);
+	hBmpPSO = (HBITMAP)LoadImage(NULL, _T("planeSW.bmp"), IMAGE_BITMAP, 20, 20, LR_LOADFROMFILE);
 	GetObject(hBmp, sizeof(bmp), &bmp);
+	GetObject(hBmpPN, sizeof(bmpPN), &bmpPN);
+	GetObject(hBmpPS, sizeof(bmpPS), &bmpPS);
+	GetObject(hBmpPE, sizeof(bmpPE), &bmpPE);
+	GetObject(hBmpPO, sizeof(bmpPO), &bmpPO);
+	GetObject(hBmpPNE, sizeof(bmpPNE), &bmpPNE);
+	GetObject(hBmpPNO, sizeof(bmpPNO), &bmpPNO);
+	GetObject(hBmpPSE, sizeof(bmpPSE), &bmpPSE);
+	GetObject(hBmpPSO, sizeof(bmpPSO), &bmpPSO);
 
 	hdc = GetDC(hWnd);
 	bmpDC = CreateCompatibleDC(hdc);
+	bmpDCPN = CreateCompatibleDC(hdc);
+	bmpDCPS = CreateCompatibleDC(hdc);
+	bmpDCPE = CreateCompatibleDC(hdc);
+	bmpDCPO = CreateCompatibleDC(hdc);
+	bmpDCPNE = CreateCompatibleDC(hdc);
+	bmpDCPNO = CreateCompatibleDC(hdc);
+	bmpDCPSE = CreateCompatibleDC(hdc);
+	bmpDCPSO = CreateCompatibleDC(hdc);
 	SelectObject(bmpDC, hBmp);
+	SelectObject(bmpDCPN, hBmpPN);
+	SelectObject(bmpDCPS, hBmpPS);
+	SelectObject(bmpDCPE, hBmpPE);
+	SelectObject(bmpDCPO, hBmpPO);
+	SelectObject(bmpDCPNE, hBmpPNE);
+	SelectObject(bmpDCPNO, hBmpPNO);
+	SelectObject(bmpDCPSE, hBmpPSE);
+	SelectObject(bmpDCPSO, hBmpPSO);
 	ReleaseDC(hWnd, hdc);
 
 	GetClientRect(hWnd, &rect);
@@ -168,7 +199,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 	//yBitmap = (rect.bottom / 2) - (bmp.bmHeight / 2);
 
 	limDir = rect.right - bmp.bmWidth;
-	hWndGlobal = hWnd;
+	data->hWndGlobal = hWnd;
 
 	hMutex = CreateMutex(NULL, FALSE, NULL);
 	//CreateThread(NULL, 0, MovimentaImagem, NULL, 0, NULL);
@@ -208,10 +239,12 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 {
 	TCHAR nomeAeroporto[500];
 	TCHAR infoAeroporto[500];
+	TCHAR infoAirplane[500];
 	HDC hdc;
 	RECT rect;
 	PAINTSTRUCT ps;
 	int x, y, primeiraVezAviao = 1, primeiraVezPassageiro = 1;
+	HWND static hPop = NULL;
 
 	//data = GetWindowLongPtr(hWnd, GWLP_USERDATA);
 
@@ -219,6 +252,66 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 	{
 
 	case WM_CREATE:
+
+		break;
+
+	case WM_MOUSEMOVE:
+		x = GET_X_LPARAM(lParam);
+		y = GET_Y_LPARAM(lParam);
+
+		for (int i = 0; i < getNumberOfAirplanes(data); i++)
+		{
+			if (_tcscmp(data->planes[i].actualAirport, _T("Fly"))){
+				if (hPop)
+				{
+					ShowWindow(hPop, SW_HIDE);
+					DestroyWindow(hPop);
+					hPop = NULL;
+				}
+				continue;
+			}
+
+			primeiraVezPassageiro = 1;
+			int airplaneX = (data->planes[i].current.x / 2);
+			int airplaneY = (data->planes[i].current.y / 2);
+			if (x >= airplaneX && y >= airplaneY && x <= (airplaneX + bmpPN.bmWidth) && y <= (airplaneY + bmpPN.bmHeight))
+			{
+				_stprintf_s(infoAirplane, 500, _T("Avião %d"), data->planes[i].planeID);
+				if (_tcscmp(data->planes[i].destinAirport, _T("NULL")))
+					_stprintf_s(infoAirplane, 500, _T("%s com destino à '%s'\n"), infoAirplane, data->planes[i].destinAirport);
+				else
+					_stprintf_s(infoAirplane, 500, _T("%s\n"), infoAirplane);
+				_stprintf_s(infoAirplane, 500, _T("%sCapacidade: %3d\n"), infoAirplane, data->planes[i].maxCapacity);
+				_stprintf_s(infoAirplane, 500, _T("%sVelocidade : %3d\n"), infoAirplane, data->planes[i].velocity);
+				_stprintf_s(infoAirplane, 500, _T("%sCoordenadas [%d,%d]\n"), infoAirplane, data->planes[i].current.x, data->planes[i].current.y);
+				for (int k = 0; k < data->nrPassengers; k++)
+					if (data->passengers[k].planeID == data->planes[i].planeID) {
+						if (primeiraVezPassageiro) {
+							_stprintf_s(infoAirplane, 500, _T("%s\nPassageiros neste avião:\n"), infoAirplane);
+							primeiraVezPassageiro--;
+						}
+						_stprintf_s(infoAirplane, 500, TEXT("%s    - %s\n"), infoAirplane, data->passengers[k].name);
+					}
+				if (!hPop)
+				{
+					GetClientRect(hWnd, &rect);
+					hPop = CreateWindowEx(WS_EX_CLIENTEDGE, //WS_EX_CLIENTEDGE,
+						TEXT("STATIC"),
+						infoAirplane,
+						WS_POPUP | WS_BORDER | WS_SYSMENU,
+						rect.left + x, rect.top + y, 150, 170,
+						hWnd, (HMENU)0, hWnd, NULL);
+					if (hPop)
+						ShowWindow(hPop, SW_SHOW);
+				}
+			}
+			else if (hPop)
+			{
+				ShowWindow(hPop, SW_HIDE);
+				DestroyWindow(hPop);
+				hPop = NULL;
+			}
+		}
 
 		break;
 
@@ -238,6 +331,25 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 				SetTextColor(hdc, RGB(0, 255, 0));
 				SetBkMode(memDC, TRANSPARENT);
 				WaitForSingleObject(hMutex, INFINITE);
+				for (int i = 0; i < getNumberOfAirplanes(data); i++)
+				{
+					if (!_tcscmp(data->planes[i].actualAirport, _T("Fly"))) {
+						xBitmap = (data->planes[i].current.x / 2);
+						yBitmap = (data->planes[i].current.y / 2);
+						//1N 2S 3E 4O 5NE 6NO 7SE 8SO
+						switch (data->planes[i].orientation) 
+						{
+							case 1: BitBlt(memDC, xBitmap, yBitmap, bmpPN.bmWidth, bmpPN.bmHeight, bmpDCPN, 0, 0, SRCCOPY); break;
+							case 2: BitBlt(memDC, xBitmap, yBitmap, bmpPN.bmWidth, bmpPN.bmHeight, bmpDCPS, 0, 0, SRCCOPY); break;
+							case 3: BitBlt(memDC, xBitmap, yBitmap, bmpPN.bmWidth, bmpPN.bmHeight, bmpDCPE, 0, 0, SRCCOPY); break;
+							case 4: BitBlt(memDC, xBitmap, yBitmap, bmpPN.bmWidth, bmpPN.bmHeight, bmpDCPO, 0, 0, SRCCOPY); break;
+							case 5: BitBlt(memDC, xBitmap, yBitmap, bmpPN.bmWidth, bmpPN.bmHeight, bmpDCPNE, 0, 0, SRCCOPY); break;
+							case 6: BitBlt(memDC, xBitmap, yBitmap, bmpPN.bmWidth, bmpPN.bmHeight, bmpDCPNO, 0, 0, SRCCOPY); break;
+							case 7: BitBlt(memDC, xBitmap, yBitmap, bmpPN.bmWidth, bmpPN.bmHeight, bmpDCPSE, 0, 0, SRCCOPY); break;
+							case 8: BitBlt(memDC, xBitmap, yBitmap, bmpPN.bmWidth, bmpPN.bmHeight, bmpDCPSO, 0, 0, SRCCOPY); break;
+						}
+					}
+				}
 				for (int i = 0; i < data->nrAirports; i++) {
 					//xBitmap = (data->airports[i].coordinates[0] / 2) - (bmp.bmWidth / 2);
 					//yBitmap = (data->airports[i].coordinates[1] / 2) - (bmp.bmHeight / 2);
@@ -256,9 +368,9 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 		x  = GET_X_LPARAM(lParam);
 		y = GET_Y_LPARAM(lParam);
 		for (int i = 0; i < data->nrAirports; i++) {
-			int airplaneX = data->airports[i].coordinates[0] /2;
-			int airplaneY = data->airports[i].coordinates[1] /2;
-			if (x >= airplaneX && y >= airplaneY && x <= (airplaneX + bmp.bmWidth) && y <= (airplaneY + bmp.bmHeight)) {
+			int airportX = data->airports[i].coordinates[0] /2;
+			int airportY = data->airports[i].coordinates[1] /2;
+			if (x >= airportX && y >= airportY && x <= (airportX + bmp.bmWidth) && y <= (airportY + bmp.bmHeight)) {
 				_stprintf_s(nomeAeroporto,500, _T("Aeroporto '%s'\n"), data->airports[i].name);
 				_stprintf_s(infoAeroporto,500, _T("Coordenadas [%d,%d]\n"), data->airports[i].coordinates[0], data->airports[i].coordinates[1]);
 				for (int j = 0; j < getNumberOfAirplanes(data); j++) {
@@ -368,7 +480,7 @@ LRESULT CALLBACK TrataEventosTerminal(HWND hWnd, UINT messg, WPARAM wParam, LPAR
 			GetDlgItemText(hWnd, IDC_COMANDO, comando, 300);
 			SetDlgItemTextA(hWnd, IDC_COMANDO, _T(""));
 			interpretaComandoControladorGUI(comando, data, hwndList);
-			InvalidateRect(hWndGlobal, NULL, FALSE);
+			InvalidateRect(data->hWndGlobal, NULL, FALSE);
 			SendMessage(hwndList, WM_VSCROLL, SB_BOTTOM, NULL); //só demorei 30m a procura desta linha ! adoro win API!
 		}
 
