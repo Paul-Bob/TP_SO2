@@ -1,7 +1,6 @@
 #include <windows.h>
 #include <Windowsx.h>
 #include <tchar.h>
-#include "resource.h"
 #include "controller.h"
 #include "Winuser.h"
 
@@ -9,6 +8,7 @@
 #include "prepareEnv.h"
 #include "textUI.h"
 #include "sharedMemory.h"
+#include "resource.h"
 
 LRESULT CALLBACK TrataEventos(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK TrataEventosTerminal(HWND, UINT, WPARAM, LPARAM);
@@ -245,6 +245,7 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 	PAINTSTRUCT ps;
 	int x, y, primeiraVezAviao = 1, primeiraVezPassageiro = 1;
 	HWND static hPop = NULL;
+	static int planeID = -1;
 
 	//data = GetWindowLongPtr(hWnd, GWLP_USERDATA);
 
@@ -259,14 +260,13 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 		x = GET_X_LPARAM(lParam);
 		y = GET_Y_LPARAM(lParam);
 
-		for (int i = 0; i < getNumberOfAirplanes(data); i++)
-		{
-			if (_tcscmp(data->planes[i].actualAirport, _T("Fly"))){
-				if (hPop)
-				{
+		for (int i = 0; i < getNumberOfAirplanes(data); i++) {
+			if (_tcscmp(data->planes[i].actualAirport, _T("Fly"))) {
+				if (hPop && planeID == data->planes[i].planeID) {
 					ShowWindow(hPop, SW_HIDE);
 					DestroyWindow(hPop);
 					hPop = NULL;
+					planeID = -1;
 				}
 				continue;
 			}
@@ -292,24 +292,31 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 						}
 						_stprintf_s(infoAirplane, 500, TEXT("%s    - %s\n"), infoAirplane, data->passengers[k].name);
 					}
-				if (!hPop)
-				{
-					GetClientRect(hWnd, &rect);
+
+				if (!hPop || (hPop && planeID != data->planes[i].planeID)) {
+					if (hPop) {
+						ShowWindow(hPop, SW_HIDE);
+						DestroyWindow(hPop);
+						hPop = NULL;
+					}
+					GetWindowRect(hWnd, &rect);
 					hPop = CreateWindowEx(WS_EX_CLIENTEDGE, //WS_EX_CLIENTEDGE,
 						TEXT("STATIC"),
 						infoAirplane,
 						WS_POPUP | WS_BORDER | WS_SYSMENU,
-						rect.left + x, rect.top + y, 150, 170,
+						rect.left + x, rect.top + y + 85, 150, 170,
 						hWnd, (HMENU)0, hWnd, NULL);
-					if (hPop)
+					if (hPop) {
+						planeID = data->planes[i].planeID;
 						ShowWindow(hPop, SW_SHOW);
+					}
 				}
 			}
-			else if (hPop)
-			{
+			else if (hPop && planeID == data->planes[i].planeID) {
 				ShowWindow(hPop, SW_HIDE);
 				DestroyWindow(hPop);
-				hPop = NULL;
+				hPop = NULL; 
+				planeID = -1;
 			}
 		}
 
