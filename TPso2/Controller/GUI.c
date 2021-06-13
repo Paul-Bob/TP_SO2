@@ -46,7 +46,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 	wcApp.lpszMenuName = MAKEINTRESOURCE(ID_MENU_PRINCIPAL);
 	wcApp.style = CS_HREDRAW | CS_VREDRAW;
 	wcApp.hIcon = LoadIcon(hInst, (LPWSTR)IDI_ICON3);
-	wcApp.hIconSm = LoadIcon(hInst, IDI_ICON3);
+	wcApp.hIconSm = LoadIcon(hInst, (LPWSTR)IDI_ICON3);
 	wcApp.hCursor = LoadCursor(NULL, IDC_ARROW);
 
 	//wcApp.cbClsExtra = sizeof(dados);
@@ -467,7 +467,7 @@ LRESULT CALLBACK TrataEventosTerminal(HWND hWnd, UINT messg, WPARAM wParam, LPAR
 		{
 			hwndList = GetDlgItem(hWnd, IDC_CONSOLA);
 			GetDlgItemText(hWnd, IDC_COMANDO, comando, 300);
-			SetDlgItemTextA(hWnd, IDC_COMANDO, _T(""));
+			SetDlgItemTextA(hWnd, IDC_COMANDO, (LPWSTR)_T(""));
 			interpretaComandoControladorGUI(comando, data, hwndList);
 			InvalidateRect(data->hWndGlobal, NULL, FALSE);
 			SendMessage(hwndList, WM_VSCROLL, SB_BOTTOM, (LPARAM)NULL); //só demorei 30m a procura desta linha ! adoro win API!
