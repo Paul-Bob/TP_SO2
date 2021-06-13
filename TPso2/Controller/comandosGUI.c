@@ -10,7 +10,7 @@ int verifyPositionsGUI(pDATA data, int x, int y, int positions, HWND hwndList);
 
 void interpretaComandoControladorGUI(TCHAR* command, pDATA data, HWND hwndList) {
 	TCHAR message[500] = _T("");
-	SendMessage(hwndList, LB_ADDSTRING, 0, TEXT(""));
+	SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)TEXT(""));
 
 	TCHAR* action = NULL, * argument = NULL, * extra = NULL;
 
@@ -23,58 +23,58 @@ void interpretaComandoControladorGUI(TCHAR* command, pDATA data, HWND hwndList) 
 	if (!_tcscmp(action, _TEXT("exit"))) {
 		for (int i = 0; i < data->maxAirplanes; i++)
 			data->planes[i].velocity = -500;
-		SendMessage(hwndList, LB_ADDSTRING, 0, TEXT("see ya\n"));
+		SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)TEXT("see ya\n"));
 	}
 	else if (!_tcscmp(action, TEXT("help"))) {
 		if (argument == 0 || _tcslen(argument)) {
 			_stprintf_s(message, 500, _TEXT("%s: extra operand '%s'"), action, argument);
-			SendMessage(hwndList, LB_ADDSTRING, 0, message);
+			SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)message);
 			return;
 		}
-		SendMessage(hwndList, LB_ADDSTRING, 0, TEXT("Comandos disponiveis:\n"));
-		SendMessage(hwndList, LB_ADDSTRING, 0, TEXT("- criar [nome] [x] [y] --> Criar novos aeroportos\n"));
-		SendMessage(hwndList, LB_ADDSTRING, 0, TEXT("- listar                        --> Lista aeroportos, aviões e passageiros\n"));
-		SendMessage(hwndList, LB_ADDSTRING, 0, TEXT("- suspender               --> Suspende o registo de novos aviões\n"));
-		SendMessage(hwndList, LB_ADDSTRING, 0, TEXT("- ativar                      --> Ativa o registo de novos aviões\n"));
+		SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)TEXT("Comandos disponiveis:\n"));
+		SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)TEXT("- criar [nome] [x] [y] --> Criar novos aeroportos\n"));
+		SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)TEXT("- listar                        --> Lista aeroportos, aviões e passageiros\n"));
+		SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)TEXT("- suspender               --> Suspende o registo de novos aviões\n"));
+		SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)TEXT("- ativar                      --> Ativa o registo de novos aviões\n"));
 		
 		//Dúvida: igual para suspender/ativar, é suposto entrar num menu ou como fizemos em SO que era sAviaoXpTO aAviaoXpTO sendo o s para suspender e a para ativar?
 	}
 	else if (!_tcscmp(action, TEXT("listar"))) {
 		if (argument == 0 || _tcslen(argument)) {
 			_stprintf_s(message, 500,  _TEXT(" % s: extra operand '%s'"), action, argument);
-			SendMessage(hwndList, LB_ADDSTRING, 0, message);
+			SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)message);
 			return;
 		}
 		if (data->nrAirports == 0) {
-			SendMessage(hwndList, LB_ADDSTRING, 0, TEXT("Não existe nenhum aeroporto!"));
+			SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)TEXT("Não existe nenhum aeroporto!"));
 			return;
 		}
-		SendMessage(hwndList, LB_ADDSTRING, 0, TEXT("Aeroportos:\n"));
+		SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)TEXT("Aeroportos:\n"));
 		for (int i = 0; i < data->nrAirports; i++){
 			_stprintf_s(message, 500, TEXT("[%3d,%3d] - %s\n"),
 				(data->airports + i)->coordinates[0], (data->airports + i)->coordinates[1], (data->airports + i)->name);
-			SendMessage(hwndList, LB_ADDSTRING, 0, message);
+			SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)message);
 		}
 
-		SendMessage(hwndList, LB_ADDSTRING, 0, TEXT(""));
+		SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)TEXT(""));
 
-		SendMessage(hwndList, LB_ADDSTRING, 0, TEXT("Avioes:\n"));
+		SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)TEXT("Avioes:\n"));
 		for (int i = 0; i < data->maxAirplanes; i++)
 			if (data->planes[i].velocity != -1) {
 				_stprintf_s(message, 500, TEXT("[%3d,%3d] - Avião ID %d"), data->planes[i].current.x, data->planes[i].current.y, data->planes[i].planeID);
-				SendMessage(hwndList, LB_ADDSTRING, 0, message);
+				SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)message);
 				if (!_tcscmp(data->planes[i].actualAirport, _T("Fly"))) {
-					SendMessage(hwndList, LB_ADDSTRING, 0, TEXT("Atualmente em voo!"));
+					SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)TEXT("Atualmente em voo!"));
 					_stprintf_s(message, 500, TEXT("Aeroporto partida: %s"), data->planes[i].departureAirport);
-					SendMessage(hwndList, LB_ADDSTRING, 0, message);
+					SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)message);
 					_stprintf_s(message, 500, TEXT("Aeroporto destino: %s"), data->planes[i].destinAirport);
-					SendMessage(hwndList, LB_ADDSTRING, 0, message);
+					SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)message);
 				}
 				else
 				{
 					_stprintf_s(message, 500, TEXT("Atualmente em repouso no aeroporto %s"), data->planes[i].actualAirport);
-					SendMessage(hwndList, LB_ADDSTRING, 0, message);
-					SendMessage(hwndList, LB_ADDSTRING, 0, TEXT(""));
+					SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)message);
+					SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)TEXT(""));
 				}
 			}
 	}
@@ -82,7 +82,7 @@ void interpretaComandoControladorGUI(TCHAR* command, pDATA data, HWND hwndList) 
 
 		if (argument == 0 || !_tcslen(argument)) {
 			_stprintf_s(message, 500, _TEXT("%s: airport name required"), action);
-			SendMessage(hwndList, LB_ADDSTRING, 0, message);
+			SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)message);
 			return;
 		}
 		else {
@@ -93,16 +93,16 @@ void interpretaComandoControladorGUI(TCHAR* command, pDATA data, HWND hwndList) 
 
 			if (argument == 0 || !_tcslen(argument)) {
 				_stprintf_s(message, 500, _TEXT("%s %s: airport x coordinate required"), action, new.name);
-				SendMessage(hwndList, LB_ADDSTRING, 0, message);
+				SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)message);
 				return;
 			}
 			else {
 				TCHAR* readInt = NULL;
 				readInt = _tcstok_s(argument, L" ", &argument);
 
-				if (argument == 0 || !_tcslen(readInt)) {
+ 				if (argument == 0 || !_tcslen(readInt)) {
 					_stprintf_s(message, 500, _TEXT("%s %s: airport x coordinate required"), action, new.name);
-					SendMessage(hwndList, LB_ADDSTRING, 0, message);
+					SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)message);
 					return;
 				}
 
@@ -110,12 +110,12 @@ void interpretaComandoControladorGUI(TCHAR* command, pDATA data, HWND hwndList) 
 
 				if (_tcslen(extra)) {
 					_stprintf_s(message, 500, _TEXT("%s %s %d: '%s' is extra\nTry: '%s %s %d'"), action, new.name, new.coordinates[X], extra, action, new.name, new.coordinates[X]);
-					SendMessage(hwndList, LB_ADDSTRING, 0, message);
+					SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)message);
 					return;
 				}
 
 				if (new.coordinates[X] < 0 || new.coordinates[X] > 999) {
-					SendMessage(hwndList, LB_ADDSTRING, 0, L"X coordinate must be higher or equal to 0 and lower than 1000");
+					SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)L"X coordinate must be higher or equal to 0 and lower than 1000");
 					return;
 				}
 
@@ -124,7 +124,7 @@ void interpretaComandoControladorGUI(TCHAR* command, pDATA data, HWND hwndList) 
 
 				if (argument == 0 || !readInt || !_tcslen(readInt)) {
 					_stprintf_s(message, 500, _TEXT("%s %s %d: airport y coordinate required"), action, new.name, new.coordinates[X]);
-					SendMessage(hwndList, LB_ADDSTRING, 0, message);
+					SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)message);
 					return;
 				}
 
@@ -132,12 +132,12 @@ void interpretaComandoControladorGUI(TCHAR* command, pDATA data, HWND hwndList) 
 
 				if (_tcslen(extra)) {
 					_stprintf_s(message, 500, _TEXT("%s %s %d %d: '%s' is extra\nTry: '%s %s %d %d'\n\n"), action, new.name, new.coordinates[X], new.coordinates[Y], extra, action, new.name, new.coordinates[X], new.coordinates[Y]);
-					SendMessage(hwndList, LB_ADDSTRING, 0, message);
+					SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)message);
 					return;
 				}
 
 				if (new.coordinates[Y] < 0 || new.coordinates[Y] > 999) {
-					SendMessage(hwndList, LB_ADDSTRING, 0, L"Y coordinate must be higher or equal to 0 and lower than 1000");
+					SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)L"Y coordinate must be higher or equal to 0 and lower than 1000");
 					return;
 				}
 			}
@@ -162,13 +162,13 @@ void interpretaComandoControladorGUI(TCHAR* command, pDATA data, HWND hwndList) 
 			}*/
 
 			if (data->nrAirports >= data->maxAirports) {
-				SendMessage(hwndList, LB_ADDSTRING, 0, TEXT("Nrº máximo de aeroportos atingido."));
+				SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)TEXT("Nrº máximo de aeroportos atingido."));
 				return;
 			}
 
 			for (int i = 0; i < data->nrAirports; i++)
 				if (!_tcscmp(new.name, data->airports[i].name)) {
-					SendMessage(hwndList, LB_ADDSTRING, 0, TEXT("Nome de aeroporto deve ser único."));
+					SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)TEXT("Nome de aeroporto deve ser único."));
 					return;
 				}
 
@@ -177,25 +177,25 @@ void interpretaComandoControladorGUI(TCHAR* command, pDATA data, HWND hwndList) 
 				data->airports[data->nrAirports] = new;
 				data->nrAirports++;
 				_stprintf_s(message, 500, _TEXT("Aeroporto '%s' foi adicionado com sucesso nas coordenadas [%d,%d]"), new.name, new.coordinates[X], new.coordinates[Y]);
-				SendMessage(hwndList, LB_ADDSTRING, 0, message);
+				SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)message);
 			}
 		}
 	}
 	else if (!_tcscmp(action, TEXT("suspender"))) {
 	planeRegisterSuspended(data, TRUE);
 	_stprintf_s(message, 500, TEXT("O registo de aviões foi suspenso\n"));
-	SendMessage(hwndList, LB_ADDSTRING, 0, message);
+	SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)message);
 	
 		}
 	else if (!_tcscmp(action, TEXT("ativar"))) {
 	planeRegisterSuspended(data, FALSE);
 	_stprintf_s(message, 500, TEXT("O registo de aviões foi reativado\n"));
-	SendMessage(hwndList, LB_ADDSTRING, 0, message);
+	SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)message);
 	}
 
 	else {
 		_stprintf_s(message, 500, TEXT("Comando '%s' inexistente\n"), action);
-		SendMessage(hwndList, LB_ADDSTRING, 0, message);
+		SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)message);
 	}
 
 
@@ -210,7 +210,7 @@ int verifyPositionsGUI(pDATA data, int x, int y, int positions, HWND hwndList) {
 
 	if (data->map->matrix[x][y] == 2) {
 		_stprintf_s(message, 500, TEXT("Já existe um aeroporto na posição [%d,%d]."), x, y);
-		SendMessage(hwndList, LB_ADDSTRING, 0, message);
+		SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)message);
 		return 0;
 	}
 
@@ -246,7 +246,7 @@ int verifyPositionsGUI(pDATA data, int x, int y, int positions, HWND hwndList) {
 				continue;
 			else if (data->map->matrix[coluna][linha] == 2) {
 				_stprintf_s(message, 500, TEXT("Aeroporto [%d,%d] está num raio de %d posições..."), coluna, linha, positions);
-				SendMessage(hwndList, LB_ADDSTRING, 0, message);
+				SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)message);
 				return 0;
 			}
 	return 1;

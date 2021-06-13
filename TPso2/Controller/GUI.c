@@ -12,6 +12,7 @@
 
 LRESULT CALLBACK TrataEventos(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK TrataEventosTerminal(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK TrataEventosNovoAeroporto(HWND, UINT, WPARAM, LPARAM);
 
 
 TCHAR szProgName[] = TEXT("Ficha8");
@@ -29,35 +30,6 @@ HWND hMutex;
 HDC memDC = NULL;
 HBITMAP hBitmapDB;
 
-//DWORD WINAPI MovimentaImagem(LPVOID lParam)
-//{
-//	int dir = 1; //1 para direita -1 para esquerda
-//	int salto = 2;
-//
-//	while (1)
-//	{
-//		WaitForSingleObject(hMutex, INFINITE);
-//
-//		xBitmap += dir * salto;
-//
-//		if (xBitmap <= 0)
-//		{
-//			xBitmap = 0;
-//			dir = 1;
-//		}
-//		else if (xBitmap >= limDir)
-//		{
-//			xBitmap = limDir;
-//			dir = -1;
-//		}
-//
-//		ReleaseMutex(hMutex);
-//
-//		InvalidateRect(data->hWndGlobal, NULL, FALSE);
-//		Sleep(1);
-//	}
-//}
-
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nCmdShow)
 {
 	HWND hWnd;
@@ -71,18 +43,10 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 	wcApp.lpszClassName = szProgName;
 	wcApp.lpfnWndProc = TrataEventos;
 
-	wcApp.style = CS_HREDRAW | CS_VREDRAW;
-
-	//wcApp.hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_ICON1));
-	//wcApp.hIconSm = LoadIcon(hInst, MAKEINTRESOURCE(IDI_ICON1));
-	//wcApp.hCursor = LoadCursor(hInst, MAKEINTRESOURCE(IDC_POINTER));
 	wcApp.lpszMenuName = MAKEINTRESOURCE(ID_MENU_PRINCIPAL);
 	wcApp.style = CS_HREDRAW | CS_VREDRAW;
-
-	wcApp.hIcon = LoadIcon(NULL, IDI_APPLICATION);
-	wcApp.hIconSm = LoadIcon(NULL, IDI_INFORMATION); 
-	////wcApp.hIcon = LoadIcon(NULL, IDI_ICON2);
-	//wcApp.hIconSm = LoadIcon(NULL, IDI_ICON2);
+	wcApp.hIcon = LoadIcon(hInst, (LPWSTR)IDI_ICON3);
+	wcApp.hIconSm = LoadIcon(hInst, IDI_ICON3);
 	wcApp.hCursor = LoadCursor(NULL, IDC_ARROW);
 
 	//wcApp.cbClsExtra = sizeof(dados);
@@ -452,6 +416,10 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 			EnableMenuItem(GetMenu(hWnd), ID_ATIVAR, MF_ENABLED);
 			EnableMenuItem(GetMenu(hWnd), ID_SUSPENDER, MF_DISABLED | MF_GRAYED);
 			break;
+
+		case ID_NOVOAEROPORTO:
+			DialogBox(NULL, MAKEINTRESOURCE(IDD_NOVO), NULL, TrataEventosNovoAeroporto);
+			break;
 		}
 
 		
@@ -479,7 +447,6 @@ LRESULT CALLBACK TrataEventosTerminal(HWND hWnd, UINT messg, WPARAM wParam, LPAR
 	HWND hwndList;
 	TCHAR welcome[300] = _T("Comando 'help' \na qualquer momento para rever informações dos comandos.");
 	TCHAR comando[300];
-	TCHAR retorno[10][500];
 
 	switch (messg)
 	{
@@ -488,7 +455,7 @@ LRESULT CALLBACK TrataEventosTerminal(HWND hWnd, UINT messg, WPARAM wParam, LPAR
 		hwndList = GetDlgItem(hWnd, IDC_CONSOLA);
 		data->hwndList = hwndList;
 
-		SendMessage(hwndList, LB_ADDSTRING, 0, welcome);
+		SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)welcome);
 		interpretaComandoControladorGUI(_T("help"), data, hwndList);
 
 		break;
@@ -503,7 +470,7 @@ LRESULT CALLBACK TrataEventosTerminal(HWND hWnd, UINT messg, WPARAM wParam, LPAR
 			SetDlgItemTextA(hWnd, IDC_COMANDO, _T(""));
 			interpretaComandoControladorGUI(comando, data, hwndList);
 			InvalidateRect(data->hWndGlobal, NULL, FALSE);
-			SendMessage(hwndList, WM_VSCROLL, SB_BOTTOM, NULL); //só demorei 30m a procura desta linha ! adoro win API!
+			SendMessage(hwndList, WM_VSCROLL, SB_BOTTOM, (LPARAM)NULL); //só demorei 30m a procura desta linha ! adoro win API!
 		}
 
 		break;
@@ -517,91 +484,49 @@ LRESULT CALLBACK TrataEventosTerminal(HWND hWnd, UINT messg, WPARAM wParam, LPAR
 	return FALSE;
 }
 
-//
-//LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
-//{
-//	HDC hdc;
-//	RECT rect;
-//	PAINTSTRUCT ps;
-//	static TCHAR charAtual = '?';
-//	static PosChar posicoes[500];
-//	static int totalPos = 0;
-//
-//	switch (messg)
-//	{
-//	case WM_PAINT:
-//		hdc = BeginPaint(hWnd, &ps);
-//		GetClientRect(hWnd, &rect);
-//
-//		if (memDC == NULL)
-//		{
-//			memDC = CreateCompatibleDC(hdc);
-//			hBitmapDB = CreateCompatibleBitmap(hdc, rect.right, rect.bottom);
-//			SelectObject(memDC, hBitmapDB);
-//			DeleteObject(hBitmapDB);
-//		}
-//
-//		FillRect(memDC, &rect, CreateSolidBrush(RGB(50, 50, 50)));
-//		SetTextColor(hdc, RGB(0, 255, 0));
-//		SetBkMode(memDC, TRANSPARENT);
-//
-//		WaitForSingleObject(hMutex, INFINITE);
-//		BitBlt(memDC, xBitmap, yBitmap, bmp.bmWidth, bmp.bmHeight, bmpDC, 0, 0, SRCCOPY);
-//		ReleaseMutex(hMutex);
-//
-//		BitBlt(hdc, 0, 0, rect.right, rect.bottom, memDC, 0, 0, SRCCOPY);
-//
-//		for (int i = 0; i < totalPos; i++) {
-//			rect.left = posicoes[i].xPos;
-//			rect.top = posicoes[i].yPos;
-//			DrawText(hdc, &posicoes[i].c, 1, &rect, DT_NOCLIP | DT_SINGLELINE);
-//		}
-//		EndPaint(hWnd, &ps);
-//		break;
-//
-//	case WM_SIZE:
-//
-//		WaitForSingleObject(hMutex, INFINITE);
-//		xBitmap = (LOWORD(lParam) / 2) - (bmp.bmWidth / 2);
-//		yBitmap = (HIWORD(lParam) / 2) - (bmp.bmHeight / 2);
-//		limDir = LOWORD(lParam) - bmp.bmWidth;
-//		ReleaseDC(hWnd, memDC);
-//		memDC = NULL;
-//		ReleaseMutex(hMutex);
-//		break;
-//
-//	case WM_LBUTTONDOWN:
-//		posicoes[totalPos].xPos = GET_X_LPARAM(lParam);
-//		posicoes[totalPos].yPos = GET_Y_LPARAM(lParam);
-//		posicoes[totalPos].c = charAtual;
-//		totalPos++;
-//		InvalidateRect(hWnd, NULL, FALSE);
-//		break;
-//
-//	case WM_ERASEBKGND:
-//		return TRUE;
-//
-//	case WM_CHAR:
-//		charAtual = (TCHAR)wParam;
-//		break;
-//
-//	case WM_CLOSE:
-//		if (MessageBox(hWnd, TEXT("Tem a certeza que quer sair?"),
-//			_T("Confirmação"), MB_YESNO | MB_ICONQUESTION) == IDYES)
-//		{
-//			DestroyWindow(hWnd);
-//		}
-//		break;
-//
-//	case WM_DESTROY:	// Destruir a janela e terminar o programa 
-//						// "PostQuitMessage(Exit Status)"		
-//		PostQuitMessage(0);
-//		break;
-//	default:
-//		// Neste exemplo, para qualquer outra mensagem (p.e. "minimizar","maximizar","restaurar")
-//		// não é efectuado nenhum processamento, apenas se segue o "default" do Windows
-//		return(DefWindowProc(hWnd, messg, wParam, lParam));
-//		break;  // break tecnicamente desnecessário por causa do return
-//	}
-//	return(0);
-//}
+LRESULT CALLBACK TrataEventosNovoAeroporto(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
+{
+	HWND hwndList;
+	TCHAR nome[100] = _T("^");
+	TCHAR comando[300];
+	TCHAR x[5] = _T("a");
+	TCHAR y[5] = _T("a");
+
+
+	switch (messg)
+	{
+
+	case WM_COMMAND:
+
+		if (LOWORD(wParam) == IDOK)
+		{
+			hwndList = GetDlgItem(hWnd, IDC_CONSOLA);
+			GetDlgItemText(hWnd, IDC_NOME, nome, 100);
+			GetDlgItemText(hWnd, IDC_X, x, 5);
+			GetDlgItemText(hWnd, IDC_Y, y, 5);
+			if (!_tcscmp(nome, _T("")) || !_tcscmp(x, _T("")) || !_tcscmp(y, _T(""))) {
+				EndDialog(hWnd, 0);
+				return TRUE;
+			}
+
+			_stprintf_s(comando, 300, _TEXT("criar %s %s %s"), nome, x, y);
+			interpretaComandoControladorGUI(comando, data, hwndList);
+			InvalidateRect(data->hWndGlobal, NULL, FALSE);
+			EndDialog(hWnd, 0);
+			return TRUE;
+		}
+		else if (LOWORD(wParam) == IDCANCEL)
+		{
+			EndDialog(hWnd, 0);
+			return TRUE;
+		}
+		break;
+
+	case WM_CLOSE:
+
+		EndDialog(hWnd, 0);
+		return TRUE;
+	}
+
+	return FALSE;
+}

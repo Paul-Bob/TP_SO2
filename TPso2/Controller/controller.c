@@ -40,32 +40,32 @@ void printConsumedInfo(Protocol message, pPlane plane, HWND hwndList) {
 	else
 		switch (message.type) {
 		case Arrive:
-			SendMessage(hwndList, LB_ADDSTRING, 0, _T(""));
+			SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)_T(""));
 			_stprintf_s(myMessage, 500, _TEXT("O avião %d aterrou com sucesso no aeroporto '%s'"), message.planeID, plane->actualAirport);
-			SendMessage(hwndList, LB_ADDSTRING, 0, myMessage);
-			SendMessage(hwndList, WM_VSCROLL, SB_BOTTOM, NULL);
+			SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)myMessage);
+			SendMessage(hwndList, WM_VSCROLL, SB_BOTTOM, (LPARAM)NULL);
 			break;
 		case Departure:
-			SendMessage(hwndList, LB_ADDSTRING, 0, _T(""));
+			SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)_T(""));
 
 			_stprintf_s(myMessage, 500, _TEXT("O avião %d descolou com sucesso do aeroporto '%s' e tem como destino o aeroporto '%s'"),
 				message.planeID, plane->departureAirport, plane->destinAirport);
-			SendMessage(hwndList, LB_ADDSTRING, 0, myMessage);
-			SendMessage(hwndList, WM_VSCROLL, SB_BOTTOM, NULL);
+			SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)myMessage);
+			SendMessage(hwndList, WM_VSCROLL, SB_BOTTOM, (LPARAM)NULL);
 			break;
 		case Register:
-			SendMessage(hwndList, LB_ADDSTRING, 0, _T(""));
+			SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)_T(""));
 
-			SendMessage(hwndList, LB_ADDSTRING, 0, _T("Novo registo de avião!"));
+			SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)_T("Novo registo de avião!"));
 			_stprintf_s(myMessage, 500, _T("Avião ID   : %d\n"), message.planeID);
-			SendMessage(hwndList, LB_ADDSTRING, 0, myMessage);
+			SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)myMessage);
 			_stprintf_s(myMessage, 500, _T("Aeroporto  : %s\n"), plane->actualAirport);
-			SendMessage(hwndList, LB_ADDSTRING, 0, myMessage);
+			SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)myMessage);
 			_stprintf_s(myMessage, 500, _T("Velocidade : %d\n"), plane->velocity);
-			SendMessage(hwndList, LB_ADDSTRING, 0, myMessage);
+			SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)myMessage);
 			_stprintf_s(myMessage, 500, _T("Capacidade : %d\n\n"), plane->maxCapacity);
-			SendMessage(hwndList, LB_ADDSTRING, 0, myMessage);
-			SendMessage(hwndList, WM_VSCROLL, SB_BOTTOM, NULL);
+			SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)myMessage);
+			SendMessage(hwndList, WM_VSCROLL, SB_BOTTOM, (LPARAM)NULL);
 			break;
 		}
 

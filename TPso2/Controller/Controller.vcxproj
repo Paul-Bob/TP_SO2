@@ -158,9 +158,8 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="controler.bmp" />
-    <Image Include="icon2.ico" />
-    <Image Include="ohquecrl.bmp" />
-    <Image Include="Teste2.bmp" />
+    <Image Include="favicon (4).ico" />
+    <Image Include="icon4.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
