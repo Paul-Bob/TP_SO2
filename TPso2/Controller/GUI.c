@@ -49,7 +49,6 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 	wcApp.hIconSm = LoadIcon(hInst, (LPWSTR)IDI_ICON3);
 	wcApp.hCursor = LoadCursor(NULL, IDC_ARROW);
 
-	//wcApp.cbClsExtra = sizeof(dados);
 	wcApp.cbClsExtra = 0;
 	wcApp.cbWndExtra = 0;
 	wcApp.hbrBackground = CreateSolidBrush(RGB(132, 219, 255));
@@ -162,29 +161,19 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 	ReleaseDC(hWnd, hdc);
 
 	GetClientRect(hWnd, &rect);
-	//xBitmap = (rect.right / 2) - (bmp.bmWidth / 2);
-	//yBitmap = (rect.bottom / 2) - (bmp.bmHeight / 2);
 
 	limDir = rect.right - bmp.bmWidth;
 	data->hWndGlobal = hWnd;
 
 	hMutex = CreateMutex(NULL, FALSE, NULL);
-	//CreateThread(NULL, 0, MovimentaImagem, NULL, 0, NULL);
-
-	//dadosPartilhados.numOperacoes = 5; // Apenas para testar...
-	//LONG_PTR x = SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)&data);
 
 	ShowWindow(hWnd, nCmdShow);
 
-	//hAccel = LoadAccelerators(NULL, MAKEINTRESOURCE(IDR_ACCELERATOR));
 
 	while (GetMessage(&lpMsg, NULL, 0, 0))
 	{
-		//if (!TranslateAccelerator(hWnd, hAccel, &lpMsg))
-		{
 			TranslateMessage(&lpMsg);
 			DispatchMessage(&lpMsg);
-		}
 	}
 
 	UnmapViewOfFile(data->producerConsumer);
@@ -395,14 +384,8 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 
 		switch (LOWORD(wParam))
 		{
-		//case ID_LOGIN:
-		//	DialogBox(NULL, MAKEINTRESOURCE(IDD_DIALOG_LOGIN), hWnd, TrataEventosLogin);
-		//	EnableMenuItem(GetMenu(hWnd), ID_CONSULTA, MF_ENABLED);
-		//	EnableMenuItem(GetMenu(hWnd), ID_LEVANTAMENTO, MF_ENABLED);
-		//	break;
 
 		case ID_ABRIRTERMINAL:
-		//case ID_ACCELERATOR_C:
 			DialogBox(NULL, MAKEINTRESOURCE(IDD_TERMINAL), NULL, TrataEventosTerminal);
 			break;
 		case ID_ATIVAR:
@@ -460,7 +443,6 @@ LRESULT CALLBACK TrataEventosTerminal(HWND hWnd, UINT messg, WPARAM wParam, LPAR
 
 		break;
 
-		// quando ha um evento sobre a listbox ha um evento WM_COMMAND
 	case WM_COMMAND:
 
 		if (LOWORD(wParam) == IDOK)
