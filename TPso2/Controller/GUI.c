@@ -78,8 +78,11 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 	//wcApp.hCursor = LoadCursor(hInst, MAKEINTRESOURCE(IDC_POINTER));
 	wcApp.lpszMenuName = MAKEINTRESOURCE(ID_MENU_PRINCIPAL);
 	wcApp.style = CS_HREDRAW | CS_VREDRAW;
+
 	wcApp.hIcon = LoadIcon(NULL, IDI_APPLICATION);
-	wcApp.hIconSm = LoadIcon(NULL, IDI_INFORMATION);
+	wcApp.hIconSm = LoadIcon(NULL, IDI_INFORMATION); 
+	////wcApp.hIcon = LoadIcon(NULL, IDI_ICON2);
+	//wcApp.hIconSm = LoadIcon(NULL, IDI_ICON2);
 	wcApp.hCursor = LoadCursor(NULL, IDC_ARROW);
 
 	//wcApp.cbClsExtra = sizeof(dados);
@@ -253,7 +256,7 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 	{
 
 	case WM_CREATE:
-
+		EnableMenuItem(GetMenu(hWnd), ID_ATIVAR, MF_DISABLED | MF_GRAYED);
 		break;
 
 	case WM_MOUSEMOVE:
@@ -438,8 +441,20 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 		//case ID_ACCELERATOR_C:
 			DialogBox(NULL, MAKEINTRESOURCE(IDD_TERMINAL), NULL, TrataEventosTerminal);
 			break;
+		case ID_ATIVAR:
+			interpretaComandoControladorGUI(_T("ativar"), data, NULL);
+			EnableMenuItem(GetMenu(hWnd), ID_ATIVAR, MF_DISABLED | MF_GRAYED);
+			EnableMenuItem(GetMenu(hWnd), ID_SUSPENDER, MF_ENABLED);
+			break;
 
+		case ID_SUSPENDER:
+			interpretaComandoControladorGUI(_T("suspender"), data, NULL);
+			EnableMenuItem(GetMenu(hWnd), ID_ATIVAR, MF_ENABLED);
+			EnableMenuItem(GetMenu(hWnd), ID_SUSPENDER, MF_DISABLED | MF_GRAYED);
+			break;
 		}
+
+		
 
 		break;
 

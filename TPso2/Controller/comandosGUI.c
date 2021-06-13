@@ -33,10 +33,9 @@ void interpretaComandoControladorGUI(TCHAR* command, pDATA data, HWND hwndList) 
 		}
 		SendMessage(hwndList, LB_ADDSTRING, 0, TEXT("Comandos disponiveis:\n"));
 		SendMessage(hwndList, LB_ADDSTRING, 0, TEXT("- criar [nome] [x] [y] --> Criar novos aeroportos\n"));
-		SendMessage(hwndList, LB_ADDSTRING, 0, TEXT("- listar               --> Lista aeroportos, aviões e passageiros\n"));
-		SendMessage(hwndList, LB_ADDSTRING, 0, TEXT("- suspender            --> Suspende o registo de novos aviões\n"));
-		SendMessage(hwndList, LB_ADDSTRING, 0, TEXT("- ativar               --> Ativa o registo de novos aviões\n"));
-		SendMessage(hwndList, LB_ADDSTRING, 0, TEXT("- exit                 --> Encerra o sistema\n"));
+		SendMessage(hwndList, LB_ADDSTRING, 0, TEXT("- listar                        --> Lista aeroportos, aviões e passageiros\n"));
+		SendMessage(hwndList, LB_ADDSTRING, 0, TEXT("- suspender               --> Suspende o registo de novos aviões\n"));
+		SendMessage(hwndList, LB_ADDSTRING, 0, TEXT("- ativar                      --> Ativa o registo de novos aviões\n"));
 		
 		//Dúvida: igual para suspender/ativar, é suposto entrar num menu ou como fizemos em SO que era sAviaoXpTO aAviaoXpTO sendo o s para suspender e a para ativar?
 	}
